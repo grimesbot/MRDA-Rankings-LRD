@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        
+        <title>MRDA Rankings Algorithm</title>
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.min.css">
+
+        <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.bootstrap5.min.css" />
+        <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.min.css" />        
+        <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.bootstrap5.min.css" />
+        <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.6.0/css/rowGroup.bootstrap5.min.css" />
+
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg sticky-top bg-light">
+            <div class="container-xl d-flex flex-row align-items-center justify-content-center">
+                <a class="navbar-brand" href="#">
+                    MRDA <!-- <img src="https://central.mrda.org/assets/img/logo-full-large.png" alt="MRDA Logo" class="d-inline-block"> -->
+                    Differentials Algorithm
+                    <span class="unofficial-flag" data-toggle="tooltip" data-bs-html="true" title="This is an unofficial tool to calculate relative strengths of MRDA teams based on their sanctioned scores in the last year.<br>Official rankings are determined by the Rankings Panel and are published quarterly.">UNOFFICIAL</span>
+                </a>
+                <div class="me-2 form-floating">
+                    <select class="form-select" name="date" id="date" aria-label="Rankings Date"></select>
+                    <label for="date">Date</label>
+                </div>
+                <div class="me-2 form-floating">
+                    <select class="form-select" name="region" id="region" aria-label="Region">
+                        <option value="GUR" selected>Global</option>
+                        <option value="AM">Americas</option>
+                        <option value="EUR">Europe</option>
+                    </select>
+                    <label for="region" class="col-form-label">Region</label>
+                </div>
+                <button class="navbar-toggler me-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarToggler" aria-controls="navbarToggler" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarToggler">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#upcoming-games-modal">Upcoming Games</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#predictor-modal">Predictor</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#all-games-modal">All Scores</a>
+                        </li>
+                        <li class="nav-item only-collapsed">
+                            <a class="nav-link" href="https://mrda.org/rankings/">Official MRDA Rankings <i class="bi bi-box-arrow-up-right"></i></a>                
+                        </li>
+                        <li class="nav-item only-collapsed">
+                            <a class="nav-link" href="https://github.com/grimesbot/MRDA_LinearRegression_UI/blob/main/README.md">Documentation <i class="bi bi-box-arrow-up-right"></i></a> 
+                        </li>
+                        <li class="nav-item only-collapsed">
+                            <a class="nav-link" href="https://github.com/grimesbot/MRDA_LinearRegression_UI/">Source Code <i class="bi bi-box-arrow-up-right"></i></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div id="rankings-chart-container" class="container-xl" >
+            <canvas id="rankings-chart"></canvas>
+        </div>
+
+        <div id="postseason-legend" class="container-xl text-center">
+            <div class="d-inline-block">Potential Postseason Tournament Invites:</div>
+            <div class="postseason-position GUR d-inline-block" data-toggle="tooltip" title="The top 7 ranked teams globally will receive a bye to MRDA Championships.">
+                MRDA Championships <i class="bi bi-question-circle"></i>
+            </div>
+            <div class="postseason-position EUR d-inline-block">
+                European 
+                <span class="qualifiers" data-toggle="tooltip" data-bs-html="true" title="The top ranked European teams who did not receive a bye to MRDA Championships, up to 8, will receive an invite to MRDA European Qualifiers. The top 2 placing teams will receive invitations to MRDA Championships. <br><br> In the event European Qualifiers are not held, the next 2 highest ranked eligible European teams will receive an invite to MRDA Championships.">Qualifiers <i class="bi bi-question-circle"></i></span>
+                <span class="invites" data-toggle="tooltip" data-bs-html="true" title="In the event European Qualifiers are not held, the next 2 highest ranked eligible European teams will receive an invite to MRDA Championships.<br><br>If there are no more eligible European teams, the next eligible team(s) from any region will be invited.">Champs Invites <i class="bi bi-question-circle"></i></span>
+            </div>
+            <div class="postseason-position AA d-inline-block">
+                Australasian 
+                <span class="qualifiers" data-toggle="tooltip" data-bs-html="true" title="The top ranked Australasian teams who did not receive a bye to MRDA Championships, up to 8, will receive an invite to MRDA Australasian Qualifiers. The winning team will receive invitations to MRDA Championships. <br><br> In the event Australasian Qualifiers are not held, the next highest ranked eligible Australasian team will receive an invite to MRDA Championships.">Qualifiers <i class="bi bi-question-circle"></i></span>
+                <span class="invites" data-toggle="tooltip" data-bs-html="true" title="In the event Australasian Qualifiers are not held, the next highest ranked eligible Australasian team will receive an invite to MRDA Championships.<br><br>If there are no eligible Australasian teams, the next eligible team from any region will be invited.">Champs Invite <i class="bi bi-question-circle"></i></span>
+            </div>
+            <div class="postseason-position AM d-inline-block">
+                Americas
+                <span class="qualifiers" data-toggle="tooltip" data-bs-html="true" title="The top ranked teams from the Americas who did not receive a bye to MRDA Championships, up to 8, will receive an invite to MRDA Americas Qualifiers. The top 2 placing teams will receive invitations to MRDA Championships. <br><br> In the event Americas Qualifiers are not held, the next 2 highest ranked eligible teams from the Americas will receive an invite to MRDA Championships.">Qualifiers <i class="bi bi-question-circle"></i></span>
+                <span class="invites" data-toggle="tooltip" data-bs-html="true" title="In the event Americas Qualifiers are not held, the next 2 highest ranked eligible teams from the Americas will receive an invite to MRDA Championships.<br><br>If there are no more eligible teams from the Americas, the next eligible team(s) from any region will be invited.">Champs Invites <i class="bi bi-question-circle"></i></span>
+            </div>
+        </div>
+        
+        <main id="rankings-table-container" role="main" class="container-xl table-responsive" >
+            <table id="rankings-table" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th class="delta" data-toggle="tooltip" title="Change in rank from last quarter."><i class="bi bi-triangle"></i></th>                        
+                        <th colspan="2">Team</th>
+                        <th class="no-wrap" data-toggle="tooltip" title="Ranking Points. The difference between the Ranking Points of two teams indicates the predicted score differential of a game played by those two teams.">RP <i class="bi bi-question-circle"></i></th>
+                        <th class="no-wrap" data-toggle="tooltip" title="Standard Error. Higher error indicates uncertainty, such as inconsistent performance or newer teams who've played fewer games.">SE <i class="bi bi-question-circle"></i></th>
+                        <th data-toggle="tooltip" data-bs-html="true" title="Sanctioned Games Played in the Ranking Period for compliance:<br>3+ to be Ranked<br>5+ to be Postseason Eligible">GP</th>
+                        <th data-toggle="tooltip" title="Wins">W</th>
+                        <th data-toggle="tooltip" title="Losses">L</th>
+                        <th data-toggle="tooltip" title="Display team's Ranking Point history in line chart above."><i class="bi bi-graph-up"></i></th>
+                    </tr>
+                </thead>
+            </table>      
+            <div class="detail-footer">
+                Last refreshed at <span id="rankings-generated-dt"></span>.
+                <a href="https://github.com/grimesbot/MRDA_LinearRegression_UI/blob/main/README.md">Documentation</a> 
+                <a href="https://github.com/grimesbot/MRDA_LinearRegression_UI/">Source Code</a>
+                <a href="https://mrda.org/rankings/">Official MRDA Rankings</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#error-modal">Error Summary</a>
+            </div>
+            <div class="detail-footer">Team logos are the property of their respective owners. All rights remain with the original copyright holders.</div>      
+        </main>
+
+        <div id="team-modal" class="modal fade" tabindex="-1" aria-labelledby="team-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <img id="team-logo" class="me-2" src="img/blank.png">
+                        <div>
+                            <h3 class="modal-title" id="team-modal-label"><span id="team-name"></span></h3>
+                            <h5 id="team-location"></h5>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h5 class="text-center">Current Ranking Points: <span id="team-rp"></span></h5>
+                        <div id="team-chart-container">
+                            <canvas id="team-chart"></canvas>
+                        </div>
+                        <div class="table-responsive">
+                            <table id="team-games-table" class="table table-striped">
+                                <thead>
+                                    <tr class="dtrg-group dtrg-level-0">
+                                        <th colspan="5">Game History</th>
+                                        <th colspan="4" class="rp-change" data-toggle="tooltip" title="Ranking Points from the Wednesday before and after the game(s)">RP: Before <i class="bi bi-arrow-right"></i> After</th>
+                                    </tr>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th>Score</th>
+                                        <th data-toggle="tooltip" title="Actual score differential">Diff</th>
+                                        <th data-toggle="tooltip" title="Expected score differential as of game date">Exp</th>
+                                        <th data-toggle="tooltip" title="Game weight for least weighted squares linear regression algorithm. Weights diminish for games with score differential beyond 200">Wt</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                            <div class="text-center">
+                                <button type="button" id="load-older-games" class="btn btn-outline-primary mt-3">Show games from previous ranking period</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="modal fade" id="upcoming-games-modal" tabindex="-1" aria-labelledby="upcoming-games-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="upcoming-games-modal-label">Upcoming Games & Scores Not Yet Reported</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table id="upcoming-games-table" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th class="dt-right">Home Team<div class="team-rp">Ranking Points</div></th>
+                                        <th></th>
+                                        <th class="dt-center">Predicted Differential</th>
+                                        <th></th>
+                                        <th>Away Team<div class="team-rp">Ranking Points</div></th>
+                                    </tr>
+                                </thead>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>  
+
+        <div class="modal fade" id="predictor-modal" tabindex="-1" aria-labelledby="predictor-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="predictor-modal-label">Expected Score Differential Calculator</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-row align-items-center justify-content-center">
+                            <div class="p-2 form-floating">
+                                <select id="predictor-home" class="form-select" aria-label="Home Team"><option disabled selected value></option></select>
+                                <label for="predictor-home">Home Team</label>
+                            </div>
+                            <div class="p-2 form-floating">
+                                <input id="predictor-date" class="form-control" type="date" aria-label="Game Date" />
+                                <label for="predictor-date">Game Date</label>
+                            </div>
+                            <div class="p-2 form-floating">
+                                <select id="predictor-away" class="form-select" aria-label="Away Team"><option disabled selected value></option></select>
+                                <label for="predictor-away">Away Team</label>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-row align-items-center justify-content-center predictor-result">
+                            <div class="p-2 text-end">
+                                <label for="predictor-home-rp">Ranking Points</label>
+                                <div id="predictor-home-rp">&nbsp;</div>
+                            </div>
+                            <div class="p-2">
+                                    <img id="predictor-home-logo" class="predictor-logo" src="img\blank.png" >
+                            </div>
+                            <div class="p-2 text-center">
+                                <label for="predictor-diff">Expected Score Differential</label>
+                                <div id="predictor-diff">&nbsp;</div>
+                            </div>
+                            <div class="p-2">
+                                <img id="predictor-away-logo" class="predictor-logo" src="img\blank.png" >
+                            </div>
+                            <div class="p-2">
+                                <label for="predictor-away-rp">Ranking Points</label>
+                                <div id="predictor-away-rp">&nbsp;</div>
+                            </div>
+                        </div>
+                        <div id="predictor-chart-container" class="position-relative">
+                            <div class="loading-overlay">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="unavailable"><i class="bi bi-exclamation-triangle"></i> Chart unavailable, 24-hour usage limit exceeded. Try again tomorrow.</div>
+                            </div>
+                            <canvas id="predictor-chart"></canvas>
+                        </div>
+                        <div class="annotations">
+                            * One game's impact on ranking points in isolation is for informational purposes only. Calculations depend on all other games in the ranking period including games yet to be played.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="all-games-modal" tabindex="-1" aria-labelledby="all-games-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="all-games-modal-label">All score data used in current rankings calculation</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table id="all-games-table" class="table table-striped"></table>
+                            <div class="annotations">
+                                <div><sup>†</sup>Scores not yet validated</div>
+                                <div><sup>↓</sup>Forfeit</div>                                
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>  
+
+        <div class="modal fade" id="error-modal" tabindex="-1" aria-labelledby="error-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="error-modal-label">Error in predicted vs. actual scores</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table id="error-table" class="table table-striped">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/moment"></script>
+
+        <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/2.3.5/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>        
+        <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.min.js"></script>
+        <script src="https://cdn.datatables.net/rowgroup/1.6.0/js/dataTables.rowGroup.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-error-bars/build/index.umd.min.js"></script>
+
+        <script src="data/mrda_events.js"></script>
+        <script src="data/mrda_teams.js"></script>
+        <script src="data/mrda_games.js"></script>    
+        <script src="data/mrda_rankings_history.js"></script>
+        <script src="mrdaLinearRegressionSystem.js"></script>
+        <script src="main.js"></script>
+    </body>
+</html>
