@@ -1,6 +1,7 @@
 team_info = {
     "2676a": { "region": "AM", "name": "Austin Anarchy", "location":"Austin, Texas – USA", "logo": "img/austin-anarchy.jpg" }, # Austin Anarchy (A)
     "2685a": { "region": "AM", "name": "Carolina Wreckingballs", "location":"Columbia, South Carolina – USA" }, # Carolina Wreckingballs (A)
+    "2685b": { "region": "AM", "name": "Carolina Wreckage", "location":"Columbia, South Carolina – USA" }, # Carolina Wreckingballs (B)
     "2686a": { "region": "AM", "name": "Casco Bay Not So Jolly Rogers", "location":"Westbrook, Maine – USA" }, # Casco Bay Roller Derby (A)
     "2686b": { "region": "AM", "name": "Casco Bay Black Sails", "location":"Westbrook, Maine – USA" }, # Casco Bay Roller Derby (B)
     "2687a": { "region": "AM", "name": "Chicago Bruise Brothers", "location":"Chicago, Illinois – USA" }, # Chicago Bruise Brothers (A)

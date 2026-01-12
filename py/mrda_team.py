@@ -1,4 +1,5 @@
 from team_info import team_info
+from mrda_game import CHARTER_MAP
 
 DEFAULT_REGION = "AM"
 
