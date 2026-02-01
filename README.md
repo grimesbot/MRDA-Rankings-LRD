@@ -46,7 +46,9 @@ The predicted score differential of a game is simply the difference of the compe
 This tool also includes an *Predictor Tool* which calculates the predicted score differential for a game between two teams on a given date, as well as an *Upcoming Games* table which displays the predicted score differentials for future sanctioned games scheduled in MRDA Central.
 
 ### Can I calculate how the outcome of a single game will impact my team's rankings?
-No, not anymore. This was possible with other algorithms in the past, but it's not possible with this algorithm because calculations depend on every other game too, not just the one game in isolation. But generally, obtaining a better score differential than predicted (see above) will tend to increase your ranking.
+Not exactly, not anymore. This was possible with other algorithms in the past, but it's not possible with this algorithm because calculations depend on every other game too, not just the one game in isolation. But generally, obtaining a better score differential than predicted (see above) will tend to increase your ranking.
+
+The *Predictor Tool* does display a graph of the estimated change in Ranking Points for both teams vs. hypothetical scores for that game in isolation. This is for informational purposes only because calculations depend on all other games in the ranking period including games yet to be played.
 
 However, you won't need to wait a month to see how a game impacts your ranking. The Web UI here should reflect game results and their ranking impact within two hours after they are entered in MRDA Central, even before scores are validated: We include score reports in "Approved" and "Waiting for Documents" assuming sanctioning requirements will be met in good faith.
 
