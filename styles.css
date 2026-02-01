@@ -147,8 +147,9 @@ td.delta i.down {
     transform: rotate(180deg);    
 }
 
-#rankings-table td:not(.no-pointer) {
-    cursor: pointer; /* Click entire row to see team details */
+#rankings-table td:not(.no-pointer),
+#upcoming-games-table tr:not(.dtrg-group) {
+    cursor: pointer;
 }
 
 .annotations {
