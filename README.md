@@ -1,6 +1,6 @@
 MRDA Rankings Algorithm using Linear Regression on Score Differentials
 ===============
-## [Unoffical MRDA Rankings Algorithm Tool for Score Differentials](https://grimesbot.github.io/MRDA_LinearRegression_UI)
+## [Unoffical MRDA Rankings Algorithm Tool for Score Differentials](https://grimesbot.github.io/MRDA-Rankings-LRD)
 
 Summary
 ---------------
