@@ -1,6 +1,7 @@
 team_info = {
     "2676a": { "region": "AM", "name": "Austin Anarchy", "location":"Austin, Texas – USA", "logo": "img/austin-anarchy.jpg" }, # Austin Anarchy (A)
     "2685a": { "region": "AM", "name": "Carolina Wreckingballs", "location":"Columbia, South Carolina – USA" }, # Carolina Wreckingballs (A)
+    "2685b": { "region": "AM", "name": "Carolina Wreckage", "location":"Columbia, South Carolina – USA" }, # Carolina Wreckingballs (B)
     "2686a": { "region": "AM", "name": "Casco Bay Not So Jolly Rogers", "location":"Westbrook, Maine – USA" }, # Casco Bay Roller Derby (A)
     "2686b": { "region": "AM", "name": "Casco Bay Black Sails", "location":"Westbrook, Maine – USA" }, # Casco Bay Roller Derby (B)
     "2687a": { "region": "AM", "name": "Chicago Bruise Brothers", "location":"Chicago, Illinois – USA" }, # Chicago Bruise Brothers (A)
@@ -17,8 +18,8 @@ team_info = {
     "2715b": { "region": "AM", "name": "Philadelphia Shenanigans", "location":"Philadelphia, Pennsylvania – USA" }, # Philadelphia Hooligans (B)
     "2717a": { "region": "AM", "name": "Puget Sound Outcast", "location":"Seattle, Washington – USA", "distance_clause_applies": True }, # Puget Sound Outcast Derby (A)
     "2719a": { "region": "AM", "name": "Race City Rebels", "location":"Indianapolis, Indiana – USA" }, # Race City Rebels (A)
-    "2723a": { "region": "AM", "name": "San Diego Aftershocks", "location":"San Diego, California – USA", "distance_clause_applies": True }, # San Diego Aftershocks (A)
-    "2723b": { "region": "AM", "name": "San Diego Tremors", "location":"San Diego, California – USA", "distance_clause_applies": True }, # San Diego Aftershocks (B)
+    "2723a": { "region": "AM", "name": "California Rangers", "location":"San Diego, California – USA", "distance_clause_applies": True }, # San Diego Aftershocks (A)
+    "2723b": { "region": "AM", "name": "California Red Flags", "location":"San Diego, California – USA", "distance_clause_applies": True }, # San Diego Aftershocks (B)
     "2727a": { "region": "AM", "name": "Saint Louis Gatekeepers", "location":"St. Louis, Missouri – USA" }, # Saint Louis Gatekeepers (A)
     "2727b": { "region": "AM", "name": "Saint Louis B-Keepers", "location":"St. Louis, Missouri – USA" }, # Saint Louis Gatekeepers (B)
     "2735a": { "region": "AM", "name": "Toronto", "location":"Toronto, Ontario – CAN" }, # Toronto Mens Roller Derby (A)

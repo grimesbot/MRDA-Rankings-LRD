@@ -1,6 +1,16 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme>
     <head>
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-HG06JWXMX9"></script>
+        <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', 'G-HG06JWXMX9');
+        </script>
+
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width">
         
@@ -54,10 +64,10 @@
                             <a class="nav-link" href="https://mrda.org/rankings/">Official MRDA Rankings <i class="bi bi-box-arrow-up-right"></i></a>                
                         </li>
                         <li class="nav-item only-collapsed">
-                            <a class="nav-link" href="https://github.com/grimesbot/MRDA_LinearRegression_UI/blob/main/README.md">Documentation <i class="bi bi-box-arrow-up-right"></i></a> 
+                            <a class="nav-link" href="https://github.com/grimesbot/MRDA-Rankings-LRD/blob/main/README.md">Documentation <i class="bi bi-box-arrow-up-right"></i></a> 
                         </li>
                         <li class="nav-item only-collapsed">
-                            <a class="nav-link" href="https://github.com/grimesbot/MRDA_LinearRegression_UI/">Source Code <i class="bi bi-box-arrow-up-right"></i></a>
+                            <a class="nav-link" href="https://github.com/grimesbot/MRDA-Rankings-LRD/">Source Code <i class="bi bi-box-arrow-up-right"></i></a>
                         </li>
                     </ul>
                 </div>
@@ -116,8 +126,8 @@
             </table>      
             <div class="detail-footer">
                 Last refreshed at <span id="rankings-generated-dt"></span>.
-                <a href="https://github.com/grimesbot/MRDA_LinearRegression_UI/blob/main/README.md">Documentation</a> 
-                <a href="https://github.com/grimesbot/MRDA_LinearRegression_UI/">Source Code</a>
+                <a href="https://github.com/grimesbot/MRDA-Rankings-LRD/blob/main/README.md">Documentation</a> 
+                <a href="https://github.com/grimesbot/MRDA-Rankings-LRD/">Source Code</a>
                 <a href="https://mrda.org/rankings/">Official MRDA Rankings</a>
                 <a href="#" data-bs-toggle="modal" data-bs-target="#error-modal">Error Summary</a>
             </div>
@@ -178,7 +188,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="table-responsive">
+                        <div  id="upcoming-games-container" class="table-responsive">
                             <table id="upcoming-games-table" class="table table-striped">
                                 <thead>
                                     <tr>

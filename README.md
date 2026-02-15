@@ -1,10 +1,10 @@
 MRDA Rankings Algorithm using Linear Regression on Score Differentials
 ===============
-## [Unoffical MRDA Rankings Algorithm Tool for Score Differentials](https://grimesbot.github.io/MRDA_LinearRegression_UI)
+## [Unoffical MRDA Rankings Algorithm Tool for Score Differentials](https://grimesbot.github.io/MRDA-Rankings-LRD)
 
 Summary
 ---------------
-This repository calculates and visualizes **unofficial** rankings for the [MRDA](https://mrda.org/) using a statistical method called [Linear Regression](https://en.wikipedia.org/wiki/Linear_regression) to calculate rankings points representing the relative strength of each team based of the **score differentials** of their sanctioned games in the ranking period. This is a variation of a method described by [Massey (1997)](https://masseyratings.com/theory/massey97.pdf) which was designed for American college football and was included in the NCAA's Bowl Championship Series (BCS) ranking formula. It was previously implemented for roller derby by [Sam Skipsey](https://aoanla.pythonanywhere.com/SRDRank.html) and later refined and adopted by the [WFTDA in 2025](https://static.wftda.com/files/competition/wftda-rankings-policy-and-algorithm.pdf).
+This repository calculates and visualizes **unofficial** rankings for the [MRDA](https://mrda.org/) using a statistical method called [Linear Regression](https://en.wikipedia.org/wiki/Linear_regression) to calculate rankings points representing the relative strength of each team based of the **score differentials** of their sanctioned games in the ranking period. This is a variation of a method described by [Massey (1997)](https://masseyratings.com/theory/massey97.pdf) which was designed for American college football and was included in the NCAA's Bowl Championship Series (BCS) ranking formula. It was previously implemented for roller derby by [Sam Skipsey](https://aoanla.pythonanywhere.com/SRDRank.html) and later refined and adopted by the [WFTDA in 2025](https://static.wftda.com/files/competition/wftda-rankings-policy-and-algorithm.pdf).  Thank you to the WFTDA for their amazing work on sports rating algorithms for flat track roller derby.
 
 This implementation for the MRDA uses **score differentials** as the metric for game outcomes as opposed to the score ratios used by other implementations for roller derby.
 
@@ -46,7 +46,9 @@ The predicted score differential of a game is simply the difference of the compe
 This tool also includes an *Predictor Tool* which calculates the predicted score differential for a game between two teams on a given date, as well as an *Upcoming Games* table which displays the predicted score differentials for future sanctioned games scheduled in MRDA Central.
 
 ### Can I calculate how the outcome of a single game will impact my team's rankings?
-No, not anymore. This was possible with other algorithms in the past, but it's not possible with this algorithm because calculations depend on every other game too, not just the one game in isolation. But generally, obtaining a better score differential than predicted (see above) will tend to increase your ranking.
+Not exactly, not anymore. This was possible with other algorithms in the past, but it's not possible with this algorithm because calculations depend on every other game too, not just the one game in isolation. But generally, obtaining a better score differential than predicted (see above) will tend to increase your ranking.
+
+The *Predictor Tool* does display a graph of the estimated change in Ranking Points for both teams vs. hypothetical scores for that game in isolation. This is for informational purposes only because calculations depend on all other games in the ranking period including games yet to be played.
 
 However, you won't need to wait a month to see how a game impacts your ranking. The Web UI here should reflect game results and their ranking impact within two hours after they are entered in MRDA Central, even before scores are validated: We include score reports in "Approved" and "Waiting for Documents" assuming sanctioning requirements will be met in good faith.
 
@@ -74,9 +76,9 @@ When calculating rankings, teams who do not have a Seed are treated as a new tea
 Previously, other algorithms have not handled hiatus or decay. Teams could take a hiatus of a year or more and return with the same ranking points or rating as when they last played. This could have a profound impact on future opponents because the ranking points of the returning team could be very inaccurate.
 
 ### Is there a differential cap?
-No, but games with a score differential greater than 150 have less weight. These blowouts provide less accurate information about the relative strengths of the teams, so we reduce the weight based on differential greater than 150 with the formula 800*score_differential^(-4/3). For reference, a score differential of 150 or less is weighted at 100%, 200 is weighted at 68%, 300 at 40%, 500 at 20%, etc.
+No, but games with a score differential greater than 200 have less weight. These blowouts provide less accurate information about the relative strengths of the teams, so we reduce the weight based on differential greater than 200 with the formula 200*score_differential^-1. For reference, a score differential of 200 or less is weighted at 100%, 250 is weighted at 80%, 300 at 67%, 400 at 50%, 500 at 40%, etc.
 
-This increases the accuracy of the algorithm overall and allows teams to test different strategy or field different skaters in these scenarios than they might if they felt like they needed to squeeze every point out of every jam.
+This increases the accuracy of the algorithm overall and allows teams to test different strategy or field different skaters in these scenarios than they might if they felt like they needed to squeeze every point out of every jam, giving the winning team "diminishing returns" past 200. It also keeps these blowouts at a high enough weight so that neither the winning team has an incentive to stop scoring points to maximize the positive impact to their ranking points, nor the losing team has an incentive to give up or "throw the game" to minimize the negative impact on their ranking points.
 
 ### Do we treat postseason games or older games differently?
 No, all games played within the Ranking Period are weighted using the same logic (see "differential cap" above). A Champs game from 11 months ago is treated the same as a regular season game played yesterday.
