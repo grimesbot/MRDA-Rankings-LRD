@@ -171,7 +171,13 @@ def rank_teams(team_rankings, games, compliance_games):
             team_ranking.region_rank = region_rank
             region_rank += 1
 
+adhoc_postseason_cutoff = date(2026,7,31) # Special "Regular Season" end date for 2026 postseason by vote
+adhoc_postseason_start = date(2026,6,3) # Q2-2026 ranking deadline we're extending
+
 def get_seed_date(date):
+    if date.today().year == adhoc_postseason_cutoff.year and adhoc_postseason_start < date < adhoc_postseason_cutoff:
+        return get_seed_date(adhoc_postseason_start)
+
     result = date - relativedelta(weeks=52) #12 months in weeks
     # If seed_date is a greater # weekday of month than date, set seed_date back an additional week
     # e.g. if date is 1st Wednesday of June, seed_date should be 1st Wednesday of June last year.

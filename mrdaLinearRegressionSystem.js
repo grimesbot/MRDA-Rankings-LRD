@@ -1,6 +1,9 @@
 const REGIONS = ['EUR', 'AA', 'AM'];
 const DIFFERENTIAL_CAP = 150;
 
+const ADHOC_POSTSEASON_CUTOFF = new Date(2026,7-1,31); // Special "Regular Season" end date for 2026 postseason by vote
+const ADHOC_POSTSEASON_START = new Date(2026,6-1,3); // Q2-2026 ranking deadline we're extending
+
 class MrdaGame {
     constructor(game, mrdaTeams, mrdaEvents, virtualGame = false) {
         this.date = game.date instanceof Date ? game.date : new Date(game.date);
@@ -297,6 +300,9 @@ class MrdaLinearRegressionSystem {
     }
 
     getSeedDate(date) {
+        if (new Date().getFullYear() == ADHOC_POSTSEASON_CUTOFF.getFullYear() && ADHOC_POSTSEASON_START < date && date < ADHOC_POSTSEASON_CUTOFF)
+            return this.getSeedDate(ADHOC_POSTSEASON_START)
+
         let seedDate = new Date(date);
         seedDate.setDate(date.getDate() - 7 * 52);
         // If seedDate is a greater # weekday of month than date, set seedDate back an additional week
@@ -385,6 +391,25 @@ class MrdaLinearRegressionSystem {
                 maxRank += 1;
                 team.rankSort = maxRank;
             });
+
+        if (date.getFullYear() == ADHOC_POSTSEASON_CUTOFF.getFullYear()) {            
+            REGIONS.forEach(r => {
+                Object.values(this.mrdaTeams).filter(team => team.postseasonEligible && r == team.region)
+                                                .sort((a, b) => a.rank - b.rank)
+                                                .slice(0,12)
+                                                .forEach(team => {
+                                                    team.postseasonPosition = r;
+                                                });
+            });
+
+            $('#postseason-legend .postseason-position.postseason-adhoc').removeClass('d-none');
+            $('#postseason-legend .postseason-position:not(.postseason-adhoc)').addClass('d-none');
+
+            return;
+        }
+
+        $('#postseason-legend .postseason-position.postseason-adhoc').addClass('d-none');
+        $('#postseason-legend .postseason-position:not(.postseason-adhoc)').removeClass('d-none');
         
         // Assign potential postseason invite positions
         // Champs go to top 7 globally
