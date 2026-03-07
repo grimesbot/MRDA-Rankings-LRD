@@ -174,25 +174,25 @@ def rank_teams(team_rankings, games, compliance_games):
 adhoc_postseason_cutoff = date(2026,7,31) # Special "Regular Season" end date for 2026 postseason by vote
 adhoc_postseason_start = date(2026,6,3) # Q2-2026 ranking deadline we're extending
 
-def get_seed_date(date):
-    if date.today().year == adhoc_postseason_cutoff.year and adhoc_postseason_start < date < adhoc_postseason_cutoff:
+def get_seed_date(calc_date):
+    if calc_date.today().year == adhoc_postseason_cutoff.year and adhoc_postseason_start < calc_date < adhoc_postseason_cutoff:
         return get_seed_date(adhoc_postseason_start)
 
-    result = date - relativedelta(weeks=52) #12 months in weeks
+    result = calc_date - relativedelta(weeks=52) #12 months in weeks
     # If seed_date is a greater # weekday of month than date, set seed_date back an additional week
     # e.g. if date is 1st Wednesday of June, seed_date should be 1st Wednesday of June last year.
     # date = Jun 7, 2028, 52 weeks prior would seed_date = Jun 9, 2027 which is 2nd Wednesday of June.
     # set seed_date back an additional week seed_date = Jun 2, 2027 so games on weekend of Jun 4-6, 2027 count
-    if (((result.day - 1) // 7) > ((date.day - 1) // 7)):
+    if (((result.day - 1) // 7) > ((calc_date.day - 1) // 7)):
         result = result - relativedelta(weeks=1)
     return result
 
-def get_ranking_history(date):
-    seed_date = get_seed_date(date)
-    ranking_history_dt = max([dt for dt in rankings_history.keys() if seed_date < dt <= date], default=None)
+def get_ranking_history(calc_date):
+    seed_date = get_seed_date(calc_date)
+    ranking_history_dt = max([dt for dt in rankings_history.keys() if seed_date < dt <= calc_date], default=None)
     return rankings_history[ranking_history_dt] if ranking_history_dt is not None else None
 
-def get_rankings(date):
+def get_rankings(calc_date):
     global q1_cutoff
     global last_games
     global last_calc_games
@@ -201,7 +201,7 @@ def get_rankings(date):
 
     team_rankings = None
 
-    seed_date = get_seed_date(date)
+    seed_date = get_seed_date(calc_date)
 
     # Get previously calculated rankings for seed_date
     seeding_team_rankings = get_ranking_history(seed_date)
@@ -212,15 +212,15 @@ def get_rankings(date):
     # But if we only use 12 months of data, Apr-Aug '23 games would fall off entirely & not contribute to
     # future seeding rankings depending on the time of the year the rankings are calculated.
     if seeding_team_rankings is None:
-        games = [game for game in mrda_games if game.scores_submitted and game.datetime.date() < date ]
+        games = [game for game in mrda_games if game.scores_submitted and game.datetime.date() < calc_date ]
     else:
-        games = [game for game in mrda_games if game.scores_submitted and seed_date <= game.datetime.date() < date ]
+        games = [game for game in mrda_games if game.scores_submitted and seed_date <= game.datetime.date() < calc_date ]
 
     # Filter compliance games to exclude postseason events prior to Q1 cutoff date
     compliance_games = games
     # No need to filter if we're doing the q1 calculation, but increment q1_cutoff to next year for future calculations
-    if date.month == 3 and date.day <= 7:
-        q1_cutoff = date
+    if calc_date.month == 3 and calc_date.day <= 7:
+        q1_cutoff = calc_date
     else:
         for postseasonEventName in POSTSEASON_EVENT_NAMES:
             compliance_games = [game for game in compliance_games if game.event_id is None or mrda_events[game.event_id].name is None or postseasonEventName not in mrda_events[game.event_id].name or game.datetime.date() >= q1_cutoff]
@@ -239,15 +239,15 @@ def get_rankings(date):
         last_calc_compliance_games = compliance_games
     # if games or compliance games have changed but we didn't get new ratings, re-rank teams with last ratings
     elif games != last_games or compliance_games != last_calc_compliance_games:
-        team_rankings = get_ranking_history(date)
+        team_rankings = get_ranking_history(calc_date)
         rank_teams(team_rankings, games, compliance_games)
         last_games = games
         last_calc_compliance_games = compliance_games
 
     # Print sorted results for ranking deadline dates when debugging
-    if not github_actions_run and date.month in [3,6,9,12] and date.day <= 7:
-        print_result = team_rankings if team_rankings is not None else get_ranking_history(date)
-        print("Rankings for " + date.strftime("%Y-%m-%d"))
+    if not github_actions_run and calc_date.month in [3,6,9,12] and calc_date.day <= 7:
+        print_result = team_rankings if team_rankings is not None else get_ranking_history(calc_date)
+        print("Rankings for " + calc_date.strftime("%Y-%m-%d"))
         for item in sorted(print_result.items(), key=lambda item: (item[1].rank if item[1].rank is not None else len(print_result), -item[1].ranking_points if item[1].ranking_points is not None else 0)):
             tr = item[1]
             print(f"{tr.rank if tr.rank is not None else "NR"}\t{str(round(tr.ranking_points - rp_min + RANKING_POINT_FLOOR, 2)) if tr.ranking_points is not None else "No RP"}\t{tr.mrda_team.name}")
