@@ -256,27 +256,27 @@ def get_rankings(calc_date):
     return team_rankings
 
 # Find the next ranking deadline, which is the first Wednesday of the next March, June, September or December
-nextRankingDeadline = datetime.today().date()
-if not (nextRankingDeadline.month % 3 == 0 and nextRankingDeadline.day <= 7 and nextRankingDeadline.weekday() <= 2):
+next_ranking_deadline = datetime.today().date()
+if not (next_ranking_deadline.month % 3 == 0 and next_ranking_deadline.day <= 7 and next_ranking_deadline.weekday() <= 2):
     # Set month to next March, June, Sept or Dec
-    nextRankingDeadline = nextRankingDeadline + relativedelta(months=(3-(nextRankingDeadline.month % 3)))
+    next_ranking_deadline = next_ranking_deadline + relativedelta(months=(3-(next_ranking_deadline.month % 3)))
 # Set to first of month
-nextRankingDeadline = nextRankingDeadline.replace(day=1)
+next_ranking_deadline = next_ranking_deadline.replace(day=1)
 # Set to Wednesday = 2
-nextRankingDeadline = nextRankingDeadline + timedelta(days=(2 - nextRankingDeadline.weekday() + 7) % 7)
+next_ranking_deadline = next_ranking_deadline + timedelta(days=(2 - next_ranking_deadline.weekday() + 7) % 7)
 
 print("Beginning ranking calculation...")
 start_time = time.perf_counter()
 calc_count = 0
 
-rankingDate = START_DATE
+ranking_date = START_DATE
 # Calculate rankings for each week on Wednesday from starting date until the next ranking deadline
-while (rankingDate <= nextRankingDeadline):
-    ranking_result = get_rankings(rankingDate)
+while (ranking_date <= next_ranking_deadline):
+    ranking_result = get_rankings(ranking_date)
     if ranking_result is not None:
-        rankings_history[rankingDate] = ranking_result
+        rankings_history[ranking_date] = ranking_result
         calc_count += 1
-    rankingDate = rankingDate + timedelta(weeks=1)
+    ranking_date = ranking_date + timedelta(weeks=1)
 
 print("Completed " + str(calc_count) + " ranking calculations in " + str(round(time.perf_counter() - start_time, 2)) + " seconds.")
 
