@@ -621,6 +621,8 @@ async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, 
     date.setDate(date.getDate() + ((3 - date.getDay() + 7) % 7)); // Set to next Wednesday
     let seedDate = mrdaLinearRegressionSystem.getSeedDate(date);
 
+    date.setDate(date.getDate() - 7); // Don't include games from current week so predicted game is in isolation
+
     let data = {th: homeTeam.teamId, ta: awayTeam.teamId};
 
     data.games = mrdaLinearRegressionSystem.mrdaGames
@@ -634,7 +636,7 @@ async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, 
     );
     
     try {
-        let response = await fetch('https://grimesbot.pythonanywhere.com/diff-predict-game', {
+        let response = await fetch('https://grimesbot.pythonanywhere.com/predict-game-lrd', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
