@@ -16,6 +16,31 @@ class TeamRanking:
         self.rank = None
         self.region_rank = None
 
+    def __eq__(self, other):
+        if self.mrda_team != other.mrda_team:
+            return False
+        if self.ranking_points != other.ranking_points:
+            return False
+        if self.standard_error != other.standard_error:
+            return False
+        if self.wins != other.wins:
+            return False
+        if self.losses != other.losses:
+            return False
+        if self.forfeits != other.forfeits:
+            return False
+        if self.game_count != other.game_count:
+            return False
+        if self.active_status != other.active_status:
+            return False
+        if self.postseason_eligible != other.postseason_eligible:
+            return False
+        if self.rank != other.rank:
+            return False
+        if self.region_rank != other.region_rank:
+            return False
+        return True
+
     def reset_accumulators(self):
         self.wins = 0
         self.losses = 0

@@ -15,20 +15,26 @@ START_DATE = date(2023,10,25) # Start calculations from first Wednesday after WH
 # Global variables
 q1_cutoff = date(2023,3,1) # Most recent Q1 ranking deadline from START_DATE (First Wednesday of March)
 rankings_history = {}
-last_games = []
-last_calc_games = []
-last_calc_compliance_games = []
-last_calc_seeding = {}
 
+linear_regression_results = []
+calc_count = 0
 rp_min = 0
 # Methods
 def linear_regression(games, seeding_team_rankings=None):
+    global linear_regression_results
+    global calc_count
     global rp_min
 
     result = {}
 
     if len(games) == 0:
         result
+
+    linear_regression_result = next((lrr for lrr in linear_regression_results if lrr["games"] == games and lrr["seeding"] == seeding_team_rankings), None)
+    if (linear_regression_result is not None):
+        for cache_result in linear_regression_result["result"]:
+            result[cache_result["team_id"]] = TeamRanking(mrda_teams[cache_result["team_id"]], cache_result["ranking_points"], cache_result["standard_error"])
+        return result
 
     team_ids = []
     for game in games:
@@ -93,14 +99,20 @@ def linear_regression(games, seeding_team_rankings=None):
     #print(wls_result)
     wls_stderrs = wls.bse
     #print(wls_stderrs)
-
+    
+    calc_count += 1
+    
+    cache_result = []
     for i, team_id in enumerate(team_ids):
         ranking_points = wls_result[i]
         standard_error = wls_stderrs[i]
         result[team_id] = TeamRanking(mrda_teams[team_id], ranking_points, standard_error)
+        cache_result.append({"team_id": team_id, "ranking_points": ranking_points, "standard_error": standard_error})
 
         if ranking_points < rp_min:
             rp_min = ranking_points
+
+    linear_regression_results.append({"games": games, "seeding": seeding_team_rankings, "result": cache_result})
 
     #print(result)
 
@@ -194,10 +206,6 @@ def get_ranking_history(calc_date):
 
 def get_rankings(calc_date):
     global q1_cutoff
-    global last_games
-    global last_calc_games
-    global last_calc_compliance_games
-    global last_calc_seeding
 
     team_rankings = None
 
@@ -227,22 +235,9 @@ def get_rankings(calc_date):
 
     # Filter forfeits from calc_games
     calc_games = [game for game in games if not game.forfeit]
-    
-    # Calculate linear regression results if calc games or seeding rankings have changed since last calculation.    
-    if calc_games != last_calc_games or seeding_team_rankings != last_calc_seeding:
-        team_rankings = linear_regression(calc_games, seeding_team_rankings)
-        last_calc_games = calc_games
-        last_calc_seeding = seeding_team_rankings
-        # Always rank teams if we got new ratings
-        rank_teams(team_rankings, games, compliance_games)
-        last_games = games
-        last_calc_compliance_games = compliance_games
-    # if games or compliance games have changed but we didn't get new ratings, re-rank teams with last ratings
-    elif games != last_games or compliance_games != last_calc_compliance_games:
-        team_rankings = get_ranking_history(calc_date)
-        rank_teams(team_rankings, games, compliance_games)
-        last_games = games
-        last_calc_compliance_games = compliance_games
+
+    team_rankings = linear_regression(calc_games, seeding_team_rankings)
+    rank_teams(team_rankings, games, compliance_games)
 
     # Print sorted results for ranking deadline dates when debugging
     if not github_actions_run and calc_date.month in [3,6,9,12] and calc_date.day <= 7:
@@ -267,15 +262,15 @@ next_ranking_deadline = next_ranking_deadline + timedelta(days=(2 - next_ranking
 
 print("Beginning ranking calculation...")
 start_time = time.perf_counter()
-calc_count = 0
 
 ranking_date = START_DATE
+last_ranking_result = None
 # Calculate rankings for each week on Wednesday from starting date until the next ranking deadline
 while (ranking_date <= next_ranking_deadline):
     ranking_result = get_rankings(ranking_date)
-    if ranking_result is not None:
+    if ranking_result != last_ranking_result:
         rankings_history[ranking_date] = ranking_result
-        calc_count += 1
+        last_ranking_result = ranking_result
     ranking_date = ranking_date + timedelta(weeks=1)
 
 print("Completed " + str(calc_count) + " ranking calculations in " + str(round(time.perf_counter() - start_time, 2)) + " seconds.")
