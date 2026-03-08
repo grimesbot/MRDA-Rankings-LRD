@@ -7,6 +7,8 @@ class TeamRanking:
         self.mrda_team = mrda_team
         self.ranking_points = ranking_points
         self.standard_error = standard_error
+        self.predictor_ranking_points = None
+        self.predictor_standard_error = None        
         self.wins = 0
         self.losses = 0
         self.forfeits = 0
@@ -22,6 +24,10 @@ class TeamRanking:
         if self.ranking_points != other.ranking_points:
             return False
         if self.standard_error != other.standard_error:
+            return False
+        if self.predictor_ranking_points != other.predictor_ranking_points:
+            return False
+        if self.predictor_standard_error != other.predictor_standard_error:
             return False
         if self.wins != other.wins:
             return False
@@ -57,6 +63,10 @@ class TeamRanking:
             result["rp"] = round(self.ranking_points - rp_min + RANKING_POINT_FLOOR, 2)
         if self.standard_error is not None:
             result["se"] = round(self.standard_error, 2)
+        if self.predictor_ranking_points is not None:
+            result["prp"] = round(self.predictor_ranking_points - rp_min + RANKING_POINT_FLOOR, 2)
+        if self.predictor_standard_error is not None:
+            result["pse"] = round(self.predictor_standard_error, 2)            
         if self.wins > 0:
             result["w"] = self.wins
         if self.losses > 0:

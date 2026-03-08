@@ -184,7 +184,9 @@ class MrdaTeamRanking {
         this.date = date;
         this.teamId = teamId;
         this.rankingPoints = teamRanking.rp ?? null;
-        this.standardError = teamRanking.se ?? null;        
+        this.standardError = teamRanking.se ?? null;
+        this.predictorRankingPoints = teamRanking.prp ?? null;
+        this.predictorStandardError = teamRanking.pse ?? null;        
         this.gameCount = teamRanking.gc ?? 0;
         this.activeStatus = teamRanking.as == 1;
         this.postseasonEligible = teamRanking.pe == 1;

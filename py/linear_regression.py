@@ -239,6 +239,14 @@ def get_rankings(calc_date):
     team_rankings = linear_regression(calc_games, seeding_team_rankings)
     rank_teams(team_rankings, games, compliance_games)
 
+    next_seed_date = get_seed_date(calc_date + timedelta(weeks=1))
+    predictor_games = [game for game in calc_games if next_seed_date <= game.datetime.date()]
+    if len(predictor_games) != len(calc_games):
+        predictor_rankings = linear_regression(predictor_games, get_ranking_history(next_seed_date))
+        for team, ranking in predictor_rankings.items():
+            team_rankings[team].predictor_ranking_points = ranking.ranking_points
+            team_rankings[team].predictor_standard_error = ranking.standard_error
+
     # Print sorted results for ranking deadline dates when debugging
     if not github_actions_run and calc_date.month in [3,6,9,12] and calc_date.day <= 7:
         print_result = team_rankings if team_rankings is not None else get_ranking_history(calc_date)
