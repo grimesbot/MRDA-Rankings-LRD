@@ -37,8 +37,8 @@ class MrdaGame {
         }
 
         // Calculate expected ratios for all games (including forfeits and upcoming games without scores)
-        let homeRankingPoints = this.homeTeam.getRankingPoints(this.date);
-        let awayRankingPoints = this.awayTeam.getRankingPoints(this.date);
+        let homeRankingPoints = this.homeTeam.getPredictorRankingPoints(this.date);
+        let awayRankingPoints = this.awayTeam.getPredictorRankingPoints(this.date);
         if (homeRankingPoints && awayRankingPoints) {
             this.expectedDifferentials[this.homeTeamId] = homeRankingPoints - awayRankingPoints;
             this.expectedDifferentials[this.awayTeamId] = awayRankingPoints - homeRankingPoints;
@@ -276,6 +276,25 @@ class MrdaTeam {
             return `${ranking.rankingPoints} ±${ranking.standardError}` ;
         else
             return null;
+    }
+
+        getPredictorRankingPoints(date, seedDate = null) {
+        let ranking = this.getRanking(date, false, seedDate);
+        if (ranking)
+            return ranking.predictorRankingPoints ?? ranking.rankingPoints;
+        else
+            return null;
+    }
+
+    getPredictorPointsWithError(date, seedDate = null) {
+        let ranking = this.getRanking(date, false, seedDate);
+        if (ranking) {
+            if (ranking.predictorRankingPoints)
+                return `${ranking.predictorRankingPoints} ±${ranking.predictorStandardError}`;
+            else
+                return `${ranking.rankingPoints} ±${ranking.predictorStandardError}`;
+        }
+        return null;
     }
 }
 
