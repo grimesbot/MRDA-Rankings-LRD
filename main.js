@@ -9,7 +9,7 @@ let region = null;
 
 function setRankingDates($dateSelect) {
     rankingPeriodDeadlineDt = new Date(`${$dateSelect.val()} 00:00`);
-    rankingPeriodStartDt = mrdaLinearRegressionSystem.getSeedDate(rankingPeriodDeadlineDt);
+    rankingPeriodStartDt = getSeedDate(rankingPeriodDeadlineDt);
 
     let prevQtrDateStr = $dateSelect.find('option:selected').nextAll().filter((i,e) => $(e).text().trim().startsWith('Q')).first().val();
     previousQuarterDt = prevQtrDateStr ? new Date(`${prevQtrDateStr} 00:00`) : null;
@@ -342,6 +342,78 @@ function handleRegionChange() {
     $('#rankings-table').DataTable().clear().rows.add(teams).draw();
 }
 
+function setTeamChartRankingHistory(team, teamChart, minDate) {
+    let minRankingDt = [...team.rankingHistory.keys()].sort((a, b) => a - b)[0];
+    if (minDate < minRankingDt) {
+        minDate = new Date(minRankingDt);
+        let oldestGame = teamChart.data.datasets[0].data.sort((a,b) => a.x - b.x)[0];
+        if (oldestGame && oldestGame.x < minDate)
+            minDate = new Date(minRankingDt);
+    }
+
+    // Set up Ranking Point data with error bars, only displayed on an interval or for > 5% change
+    let rankingHistory = [];
+    let errorBarMinFrequency = (rankingPeriodDeadlineDt - minDate) / 16;
+    let lastDtWithErrorBars = null;
+    let teamRankingHistoryArray = Array.from(team.rankingHistory.entries()).filter(rh => minDate <= rh[0] && rh[0] <= rankingPeriodDeadlineDt);
+    for (const [dt, ranking] of teamRankingHistoryArray) {
+        let chartErrs = false;
+        let index = teamRankingHistoryArray.findIndex(([key]) => key === dt);
+        if (index == 0 || index == teamRankingHistoryArray.length - 1)
+            chartErrs = true;
+        else {
+            let lastRanking = teamRankingHistoryArray[index - 1];
+            let nextRanking = teamRankingHistoryArray[index + 1];
+            if (lastRanking[1].standardError/ranking.standardError > 1.1
+                || lastRanking[1].standardError/ranking.standardError < .9
+                || nextRanking[1].standardError/ranking.standardError > 1.1
+                || nextRanking[1].standardError/ranking.standardError < .9)
+                chartErrs = true;
+        }
+
+        if (!chartErrs && (dt - lastDtWithErrorBars) > errorBarMinFrequency)
+            chartErrs = true;
+
+        if (chartErrs)
+            lastDtWithErrorBars = dt;
+
+        let errMin = ranking.rankingPoints - ranking.standardError;
+        let errMax = ranking.rankingPoints + ranking.standardError;
+
+        let rankingDt = new Date(dt);
+        let predictorDt = null;
+        if (rankingDt < rankingPeriodDeadlineDt && ranking.predictorRankingPoints) {
+            rankingDt.setDate(rankingDt.getDate() - 1);
+            predictorDt = new Date(dt);
+            predictorDt.setDate(predictorDt.getDate() + 1);
+        }
+            
+        rankingHistory.push({
+            x: rankingDt,
+            y: ranking.rankingPoints,
+            yMin: chartErrs ? errMin : null,
+            yMax: chartErrs ? errMax : null,
+            title: dt.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}),
+            label: `RP: ${ranking.rankingPoints} ± ${ranking.standardError} (${errMin.toFixed(2)} .. ${errMax.toFixed(2)})`
+        });
+
+        if (predictorDt) {
+            rankingHistory.push({
+                x: predictorDt,
+                y: ranking.predictorRankingPoints,
+                yMin: null,
+                yMax: null,
+                title: `${dt.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})} after game decay`,
+                label: `RP: ${ranking.predictorRankingPoints} ± ${ranking.predictorStandardError} (${(ranking.predictorRankingPoints - ranking.predictorStandardError).toFixed(2)} .. ${(ranking.predictorRankingPoints + ranking.predictorStandardError).toFixed(2)})`
+            });
+        }
+    }
+    
+    teamChart.data.datasets[1].data = rankingHistory;
+    teamChart.options.scales.x.min = minDate;
+    teamChart.options.scales.x.max = rankingPeriodDeadlineDt;
+}
+
 function setupTeamDetails() {
     let $teamDetailModal = $('#team-modal');
     let $olderGamesBtn = $('#load-older-games');
@@ -489,62 +561,14 @@ function setupTeamDetails() {
         $('#team-logo').attr('src', team.logo);
         $('#team-location').text(team.location);
 
-        let minChartDt = [...team.rankingHistory.keys()].sort((a, b) => a - b)[0];
-        let chartGames = team.gameHistory.filter(game => game.gamePoints[team.teamId]);        
-        let oldestGame = chartGames.sort((a,b) => a.date - b.date)[0];
-        if (oldestGame && oldestGame.date < minChartDt)
-            minChartDt = new Date(minChartDt).setDate(minChartDt.getDate() - 7);
-
-        // Set up Ranking Point data with error bars, only displayed on an interval or for > 5% change
-        let rankingHistory = [];
-        let errorBarMinFrequency = (date - minChartDt) / 16;
-        let lastDtWithErrorBars = null;
-        let teamRankingHistoryArray = Array.from(team.rankingHistory.entries()).filter(rh => rh[0] <= date);
-        for (const [dt, ranking] of teamRankingHistoryArray) {
-            let chartErrs = false;
-            let index = teamRankingHistoryArray.findIndex(([key]) => key === dt);
-            if (index == 0 || index == teamRankingHistoryArray.length - 1 || dt == date)
-                chartErrs = true;
-            else {
-                let lastRanking = teamRankingHistoryArray[index - 1];
-                let nextRanking = teamRankingHistoryArray[index + 1];
-                if (lastRanking[1].standardError/ranking.standardError > 1.1
-                    || lastRanking[1].standardError/ranking.standardError < .9
-                    || nextRanking[1].standardError/ranking.standardError > 1.1
-                    || nextRanking[1].standardError/ranking.standardError < .9)
-                    chartErrs = true;
-            }
-
-            if (!chartErrs && (dt - lastDtWithErrorBars) > errorBarMinFrequency)
-                chartErrs = true;
-
-            if (chartErrs)
-                lastDtWithErrorBars = dt;
-
-            let errMin = ranking.rankingPoints - ranking.standardError;
-            let errMax = ranking.rankingPoints + ranking.standardError;
-                
-            rankingHistory.push({
-                x: dt,
-                y: ranking.rankingPoints,
-                yMin: chartErrs ? errMin : null,
-                yMax: chartErrs ? errMax : null,
-                title: dt.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}),
-                label: `RP: ${ranking.rankingPoints} ± ${ranking.standardError} (${errMin.toFixed(2)} .. ${errMax.toFixed(2)})`
-            });
-        }
-        
-        // Game chart data
-        teamChart.data.datasets[0].data = chartGames.map(game => {
+        teamChart.data.datasets[0].data = team.gameHistory.filter(game => game.gamePoints[team.teamId]).map(game => {
             return { 
                 x: game.date, 
                 y: game.gamePoints[team.teamId],
                 title: game.getGameAndEventTitle(),
                 label: `${game.getGameSummary(team.teamId)}: ${game.gamePoints[team.teamId].toFixed(2)}`
             }});
-        teamChart.data.datasets[1].data = rankingHistory;
-        teamChart.options.scales.x.min = minChartDt;
-        teamChart.options.scales.x.max = rankingPeriodDeadlineDt;
+        setTeamChartRankingHistory(team, teamChart, rankingPeriodStartDt);
         teamChart.update();
 
         // Game table data filtered to current ranking period.
@@ -560,8 +584,10 @@ function setupTeamDetails() {
     });
 
     $olderGamesBtn.on('click', function (e) {
-        let newMinDt = mrdaLinearRegressionSystem.getSeedDate(minGameDt);
+        let newMinDt = getSeedDate(minGameDt);
         teamGameTable.rows.add(team.gameHistory.filter(game => newMinDt <= game.date && game.date < minGameDt)).draw();
+        setTeamChartRankingHistory(team, teamChart, newMinDt);
+        teamChart.update();
         minGameDt = newMinDt;
         if (team.gameHistory.some(game => game.date < minGameDt))
             $olderGamesBtn.show();
@@ -619,7 +645,7 @@ async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, 
     date = new Date(date);
     date.setHours(0, 0, 0, 0);
     date.setDate(date.getDate() + ((3 - date.getDay() + 7) % 7)); // Set to next Wednesday
-    let seedDate = mrdaLinearRegressionSystem.getSeedDate(date);
+    let seedDate = getSeedDate(date);
 
     date.setDate(date.getDate() - 7); // Don't include games from current week so predicted game is in isolation
 
@@ -892,7 +918,7 @@ function setupErrorSummary() {
         maxDt: null
     });
 
-    let predictedGames = mrdaLinearRegressionSystem.mrdaGames.filter(game => game.absLogError);
+    let predictedGames = mrdaLinearRegressionSystem.mrdaGames.filter(game => game.absLogError != null);
     for (const data of tableData) {
         let games = predictedGames.filter(game => (data.minDt == null || data.minDt <= game.date) && (data.maxDt == null || game.date < data.maxDt));
         data.gameCount = games.length;
