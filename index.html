@@ -129,6 +129,7 @@
                 <a href="https://github.com/grimesbot/MRDA-Rankings-LRD/blob/main/README.md">Documentation</a> 
                 <a href="https://github.com/grimesbot/MRDA-Rankings-LRD/">Source Code</a>
                 <a href="https://mrda.org/rankings/">Official MRDA Rankings</a>
+                <a href="#" data-bs-toggle="modal" data-bs-target="#upsets-modal">Upsets</a>
                 <a href="#" data-bs-toggle="modal" data-bs-target="#error-modal">Error Summary</a>
             </div>
             <div class="detail-footer">Team logos are the property of their respective owners. All rights remain with the original copyright holders.</div>      
@@ -285,7 +286,24 @@
                     </div>
                 </div>
             </div>
-        </div>  
+        </div>
+
+        <div class="modal fade" id="upsets-modal" tabindex="-1" aria-labelledby="upsets-modal-label" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="upsets-modal-label">Upset Games where the now higher ranked team lost.</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="table-responsive">
+                            <table id="upsets-table" class="table table-striped">
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="modal fade" id="error-modal" tabindex="-1" aria-labelledby="error-modal-label" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-fullscreen-xl-down">

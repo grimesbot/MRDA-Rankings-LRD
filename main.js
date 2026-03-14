@@ -348,7 +348,7 @@ function setTeamChartRankingHistory(team, teamChart, minDate) {
         minDate = new Date(minRankingDt);
         let oldestGame = teamChart.data.datasets[0].data.sort((a,b) => a.x - b.x)[0];
         if (oldestGame && oldestGame.x < minDate)
-            minDate = new Date(minRankingDt);
+            minDate.setDate(minDate.getDate() - 7);
     }
 
     // Set up Ranking Point data with error bars, only displayed on an interval or for > 5% change
@@ -679,6 +679,8 @@ async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, 
         predictorChart.options.scales.x.min = results[0]['d'];
         predictorChart.options.scales.x.max = results[results.length - 1]['d'];
 
+        predictorChart.data.datasets = [];
+
         predictorChart.data.datasets.push({
             label: homeTeam.name,
             data: results.map(result => ({ x: result['d'], y: result['dh']})),
@@ -818,59 +820,114 @@ function setupPredictor() {
 }
 
 function setupAllGames() {
-    // Filter to games within ranking period with scores
-    let games = mrdaLinearRegressionSystem.mrdaGames
-        .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt
-            && game.homeTeamId in game.scores && game.awayTeamId in game.scores);
+    let allGamesTable = new DataTable('#all-games-table', {
+        columns: [
+            { data: 'event.startDt', visible: false },
+            { data: 'eventId', visible: false },                
+            { data: 'date', visible: false },
+            { data: 'homeTeam.name', title: 'Home Team', className: 'dt-right', render: function(data, type, game) { return game.forfeit && game.forfeitTeamId == game.homeTeamId ? `${data}<sup class="forfeit-info">↓</sup>` : data; } },
+            { data: 'homeTeam.logo', width: '1em', render: function(data, type, game) { return `<img class="ms-2 team-logo" src="${data}">`; } },
+            { name: 'score', width: '7em', className: 'dt-center', title: 'Score', render: function(data, type, game) {return `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}${game.status < 6 ? '<sup class="unvalidated-info">†</sup>' : ''}`} },
+            { data: 'awayTeam.logo', width: '1em', render: function(data, type, game) { return `<img class="ms-2 team-logo" src="${data}">`; } },                
+            { data: 'awayTeam.name', title: 'Away Team', render: function(data, type, game) { return game.forfeit && game.forfeitTeamId == game.awayTeamId ? `${data}<sup class="forfeit-info">↓</sup>` : data; } },
+            { data: 'weight', title: 'Weight', width: '1em', render: function(data, type, game) { return data ? `${(data * 100).toFixed(0)}%` : ''; } }
+        ],
+        data: [],
+        rowGroup: {
+            dataSrc: ['event.getEventTitle()','getGameDay()'],
+            emptyDataGroup: null
+        },
+        lengthChange: false,
+        order: [[0, 'desc'], [1, 'desc'], [2, 'desc']],
+        ordering: {
+            handler: false
+        },
+        drawCallback: function (settings) {
+            $('#all-games-table .unvalidated-info').tooltip({title: 'Score not yet validated'});            
+            $('#all-games-table .forfeit-info').tooltip({title: 'Forfeit'});
+        }
+    });    
 
-    // Add virtual games
-    let seedingRankings = mrdaLinearRegressionSystem.getRankingHistory(rankingPeriodStartDt);
-    if (seedingRankings) {
-        for (const [teamId, ranking] of Object.entries(seedingRankings)) {
-            if (games.some(game => !game.forfeit && (game.homeTeamId == teamId || game.awayTeamId == teamId))) {
-                games.push(new MrdaGame({
-                    date: rankingPeriodStartDt,
-                    home_team: teamId,
-                    home_score: ranking.rankingPoints.toFixed(2),
-                    away_score: 0,
-                    weight: .25,
-                }, mrdaLinearRegressionSystem.mrdaTeams, mrdaLinearRegressionSystem.mrdaEvents, true));
+    $('#all-games-modal').on('show.bs.modal', function () {
+        // Filter to games within ranking period with scores
+        let games = mrdaLinearRegressionSystem.mrdaGames
+            .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt
+                && game.homeTeamId in game.scores && game.awayTeamId in game.scores);
+
+        // Add virtual games
+        let seedingRankings = mrdaLinearRegressionSystem.getRankingHistory(rankingPeriodStartDt);
+        if (seedingRankings) {
+            for (const [teamId, ranking] of Object.entries(seedingRankings)) {
+                if (games.some(game => !game.forfeit && (game.homeTeamId == teamId || game.awayTeamId == teamId))) {
+                    games.push(new MrdaGame({
+                        date: rankingPeriodStartDt,
+                        home_team: teamId,
+                        home_score: ranking.rankingPoints.toFixed(2),
+                        away_score: 0,
+                        weight: .25,
+                    }, mrdaLinearRegressionSystem.mrdaTeams, mrdaLinearRegressionSystem.mrdaEvents, true));
+                }
             }
         }
-    }
+        allGamesTable.clear().rows.add(games).draw();
+    });
+    $('#all-games-modal').on('hidden.bs.modal', function () {
+        allGamesTable.clear().draw();
+    });
+}
 
-    if (DataTable.isDataTable('#all-games-table')) {
-        $('#all-games-table').DataTable().clear().rows.add(games).draw();
-        return;
-    }
+function setupUpsetGames() {
+    let upsetsTable = new DataTable('#upsets-table', {
+        columns: [
+            { data: 'date', name: 'Date', render: function (data, type, game) { return type === 'display' ? data.toLocaleDateString() : data; } },
+            { data: 'homeTeam.name', title: 'Home Team', className: 'dt-right', render: function(data, type, game) { 
+                let result = data;
+                if (type === 'display')
+                {
+                    for (let i = 0; i < game.homeTeam.forfeits; i++) {
+                        result += '<sup class="forfeit-penalty">↓</sup>';
+                    }
+                }
+                return result;
+            }},
+            { data: 'homeTeam.rank', title: 'Home #', width: '1em', className: 'no-wrap dt-right', render: function(data, type, game) { return region == 'GUR' ? data : game.homeTeam.regionRank; } },
+            { name: 'score', width: '7em', className: 'dt-center', title: 'Score', render: function(data, type, game) {return type === 'display' ? `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}` : Math.abs(game.scores[game.homeTeamId]-game.scores[game.awayTeamId]); } },
+            { data: 'awayTeam.rank', title: 'Away #', width: '1em', className: 'no-wrap dt-left', render: function(data, type, game) { return region == 'GUR' ? data : game.awayTeam.regionRank; } },
+            { data: 'awayTeam.name', title: 'Away Team', render: function(data, type, game) {
+                let result = data;
+                if (type === 'display')
+                {
+                    for (let i = 0; i < game.awayTeam.forfeits; i++) {
+                        result += '<sup class="forfeit-penalty">↓</sup>';
+                    }
+                }
+                return result;
+            }},
+            { title: '# Diff', width: '1em', className: 'no-wrap', render: function(data, type, game) { return region == "GUR" ? Math.abs(game.homeTeam.rank - game.awayTeam.rank) : Math.abs(game.homeTeam.regionRank - game.awayTeam.regionRank); }},
+            { title: 'RP Diff', width: '1em', className: 'no-wrap', render: function(data, type, game) { return Math.abs(game.homeTeam.rankingPoints-game.awayTeam.rankingPoints).toFixed(2); }}
+        ],
+        data: [],
+        lengthChange: false,
+        searching: false,
+        drawCallback: function (settings) {
+            $('#upsets-table .forfeit-penalty').tooltip({title: 'Two rank penalty applied for forfeit.'});
+        }
+    });
 
-    new DataTable('#all-games-table', {
-            columns: [
-                { data: 'event.startDt', visible: false },
-                { data: 'eventId', visible: false },                
-                { data: 'date', visible: false },
-                { data: 'homeTeam.name', title: 'Home Team', className: 'dt-right', render: function(data, type, game) { return game.forfeit && game.forfeitTeamId == game.homeTeamId ? `${data}<sup class="forfeit-info">↓</sup>` : data; } },
-                { data: 'homeTeam.logo', width: '1em', render: function(data, type, game) { return `<img class="ms-2 team-logo" src="${data}">`; } },
-                { name: 'score', width: '7em', className: 'dt-center', title: 'Score', render: function(data, type, game) {return `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}${game.status < 6 ? '<sup class="unvalidated-info">†</sup>' : ''}`} },
-                { data: 'awayTeam.logo', width: '1em', render: function(data, type, game) { return `<img class="ms-2 team-logo" src="${data}">`; } },                
-                { data: 'awayTeam.name', title: 'Away Team', render: function(data, type, game) { return game.forfeit && game.forfeitTeamId == game.awayTeamId ? `${data}<sup class="forfeit-info">↓</sup>` : data; } },
-                { data: 'weight', title: 'Weight', width: '1em', render: function(data, type, game) { return data ? `${(data * 100).toFixed(0)}%` : ''; } }
-            ],
-            data: games,
-            rowGroup: {
-                dataSrc: ['event.getEventTitle()','getGameDay()'],
-                emptyDataGroup: null
-            },
-            lengthChange: false,
-            order: [[0, 'desc'], [1, 'desc'], [2, 'desc']],
-            ordering: {
-                handler: false
-            },
-            drawCallback: function (settings) {
-                $('.unvalidated-info').tooltip({title: 'Score not yet validated'});            
-                $('.forfeit-info').tooltip({title: 'Forfeit'});
-            }
-        });
+    $('#upsets-modal').on('show.bs.modal', function () {
+        let upsetGames = mrdaLinearRegressionSystem.mrdaGames
+            .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt
+                && game.homeTeamId in game.scores && game.awayTeamId in game.scores && !game.forfeit
+                && game.homeTeam.rank && game.awayTeam.rank
+                && (region == "GUR" || (game.homeTeam.region == region && game.awayTeam.region == region))
+                && ((game.scores[game.homeTeamId] > game.scores[game.awayTeamId] && game.homeTeam.rank > game.awayTeam.rank)
+                    || (game.scores[game.awayTeamId] > game.scores[game.homeTeamId] && game.awayTeam.rank > game.homeTeam.rank)));
+
+        upsetsTable.clear().rows.add(upsetGames).draw();
+    });
+    $('#upsets-modal').on('hidden.bs.modal', function () {
+        upsetsTable.clear().draw();
+    });
 }
 
 function setupErrorSummary() {
@@ -982,8 +1039,8 @@ $(function() {
     setupUpcomingGames();
 
     setupAllGames();
-    // update all games table when ranking period changes to filter games to new ranking period and recalculate virtual games
-    $dateSelect.on('change', setupAllGames); 
+
+    setupUpsetGames();      
 
     setupErrorSummary();
 })
