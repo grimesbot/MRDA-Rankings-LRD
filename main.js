@@ -480,7 +480,7 @@ function setupTeamDetails() {
                 type: 'scatter',
                 label: 'Games',
                 data: [],
-                pointRadius: 5,
+                pointRadius: 6,
             }, {
                 type: 'lineWithErrorBars',
                 label: 'Ranking Points ± Standard Error',
