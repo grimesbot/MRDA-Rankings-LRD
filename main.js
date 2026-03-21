@@ -129,6 +129,9 @@ function setupRankingChart(teams) {
             scales: {
                 x: {
                     type: 'time',
+                    time: {
+                        unit: 'month'
+                    },
                     min: rankingPeriodStartDt,
                     max: rankingPeriodDeadlineDt
                 }
@@ -489,6 +492,9 @@ function setupTeamDetails() {
             scales: {
                 x: {
                     type: 'time',
+                    time: {
+                        unit: 'month'
+                    },
                     min: rankingPeriodStartDt,
                     max: rankingPeriodDeadlineDt
                 }
@@ -532,7 +538,12 @@ function setupTeamDetails() {
                     },
                 },
                 y: {
-                    stacked: true
+                    stacked: true,
+                    ticks: {
+                        callback: function(value) { 
+                            return `${value > 0 ? '+' : ''}${value}`;
+                         }
+                    },
                 }
             },
             plugins: {
@@ -560,7 +571,10 @@ function setupTeamDetails() {
                     callbacks: {
                         title: function(context) {
                             if (context[0].datasetIndex == 0)
-                                return `${rankingPeriodStartDt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}: ${context[0].label}`;
+                                return [
+                                    `${rankingPeriodStartDt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}: ${context[0].label}`,
+                                    `${team.getRankingPoints(rankingPeriodStartDt).toFixed(2)}-${mrda_config.virtual_team_rp} vs Virtual Team`,
+                                ];
                             return [
                                 context[0].raw.game.getGameAndEventTitle(),
                                 context[0].raw.game.getGameSummary(team.teamId)
@@ -571,7 +585,6 @@ function setupTeamDetails() {
                                 let expectedDiff = team.rankingPoints - mrda_config.virtual_team_rp;
                                 let actualDiff = team.getRankingPoints(rankingPeriodStartDt) - mrda_config.virtual_team_rp;
                                 return [
-                                    `${team.getRankingPoints(rankingPeriodStartDt).toFixed(2)}-${mrda_config.virtual_team_rp} vs Virtual Team`,
                                     `Opponent's Current RP: ${mrda_config.virtual_team_rp}`,
                                     `Expected Differential: ${expectedDiff > 0 ? '+' : ''}${expectedDiff.toFixed(2)}`,
                                     `Score Differential: ${actualDiff > 0 ? '+' : ''}${actualDiff.toFixed(2)}`,
