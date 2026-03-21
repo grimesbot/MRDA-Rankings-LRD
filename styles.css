@@ -51,6 +51,7 @@ nav .form-floating>label {
     height: 30rem;
 }
 #team-chart-container,
+#team-chart-container .tab-pane,
 #predictor-chart-container {
     height: 25rem;
 }
@@ -168,6 +169,10 @@ td.delta i.down {
 
 #team-rp {
     font-weight: bold;
+}
+
+#nav-team-charts {
+    font-size: .9em;
 }
 
 .text-overflow-ellipsis {

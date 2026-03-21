@@ -148,8 +148,19 @@
                     </div>
                     <div class="modal-body">
                         <h5 class="text-center">Current Ranking Points: <span id="team-rp"></span></h5>
-                        <div id="team-chart-container">
-                            <canvas id="team-chart"></canvas>
+                        <nav>
+                            <div class="nav nav-tabs" id="nav-team-charts" role="tablist">
+                                <button class="nav-link py-1 active" id="nav-ranking-history-tab" data-bs-toggle="tab" data-bs-target="#nav-ranking-history" type="button" role="tab" aria-controls="nav-ranking-history" aria-selected="true">Ranking Points over Time</button>
+                                <button class="nav-link py-1" id="nav-game-error-tab" data-bs-toggle="tab" data-bs-target="#nav-game-error" type="button" role="tab" aria-controls="nav-game-error" aria-selected="false">Game Error</button>
+                            </div>
+                        </nav>
+                        <div class="tab-content" id="team-chart-container">
+                            <div class="tab-pane fade show active" id="nav-ranking-history" role="tabpanel" aria-labelledby="nav-ranking-history-tab">
+                                <canvas id="team-chart"></canvas>
+                            </div>
+                            <div class="tab-pane fade" id="nav-game-error" role="tabpanel" aria-labelledby="nav-game-error-tab">
+                                <canvas id="team-error-chart"></canvas>
+                            </div>                            
                         </div>
                         <div class="table-responsive">
                             <table id="team-games-table" class="table table-striped">
@@ -338,6 +349,7 @@
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-error-bars/build/index.umd.min.js"></script>
 
+        <script src="data/mrda_config.js"></script>
         <script src="data/mrda_events.js"></script>
         <script src="data/mrda_teams.js"></script>
         <script src="data/mrda_games.js"></script>    

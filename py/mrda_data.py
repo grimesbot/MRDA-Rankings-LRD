@@ -43,17 +43,15 @@ def get_api_game_data(startDate, status=None):
 
     return payload
 
-def write_json_to_file(data, file_name, var_name=None, utc_timestamp_var=None):
+def write_json_to_file(data, file_name, var_name=None):
     file_path = os.path.join(DATA_DIR, file_name)
     # Delete if exists
     if os.path.exists(file_path):
         os.remove(file_path)
     # Write with optional JS variable name and optional UTC timestamp variable
     with open( file_path , "w" ) as f:
-        if utc_timestamp_var is not None:
-            f.write(utc_timestamp_var + " = \"" + datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ") + "\";\n")    
         if var_name is not None:
-            f.write(var_name + " = ")
+            f.write(f"globalThis.{var_name} = ")
         json.dump( data , f) #, indent=4) pretty print
 
 # Get 2024+ games from API

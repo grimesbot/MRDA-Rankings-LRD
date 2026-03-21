@@ -1,7 +1,5 @@
 from mrda_team import MrdaTeam
 
-RANKING_POINT_FLOOR = 1
-
 class TeamRanking:
     def __init__(self, mrda_team: MrdaTeam, ranking_points = None, standard_error = None):
         self.mrda_team = mrda_team
@@ -57,14 +55,14 @@ class TeamRanking:
         self.rank = None
         self.region_rank = None        
 
-    def to_dict(self, rp_min):
+    def to_dict(self, rp_transform):
         result = {}
         if self.ranking_points is not None:
-            result["rp"] = round(self.ranking_points - rp_min + RANKING_POINT_FLOOR, 2)
+            result["rp"] = round(self.ranking_points + rp_transform, 2)
         if self.standard_error is not None:
             result["se"] = round(self.standard_error, 2)
         if self.predictor_ranking_points is not None:
-            result["prp"] = round(self.predictor_ranking_points - rp_min + RANKING_POINT_FLOOR, 2)
+            result["prp"] = round(self.predictor_ranking_points + rp_transform, 2)
         if self.predictor_standard_error is not None:
             result["pse"] = round(self.predictor_standard_error, 2)            
         if self.wins > 0:
@@ -83,4 +81,4 @@ class TeamRanking:
             result["r"] = self.rank
         if self.region_rank is not None:
             result["rr"] = self.region_rank            
-        return result        
+        return result

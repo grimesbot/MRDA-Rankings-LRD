@@ -342,7 +342,7 @@ function handleRegionChange() {
     $('#rankings-table').DataTable().clear().rows.add(teams).draw();
 }
 
-function setTeamChartRankingHistory(team, teamChart, minDate) {
+function setTeamChartRankingHistory(team, teamChart, minDate = rankingPeriodStartDt) {
     let minRankingDt = [...team.rankingHistory.keys()].sort((a, b) => a - b)[0];
     if (minDate < minRankingDt) {
         minDate = new Date(minRankingDt);
@@ -414,6 +414,55 @@ function setTeamChartRankingHistory(team, teamChart, minDate) {
     teamChart.options.scales.x.max = rankingPeriodDeadlineDt;
 }
 
+function setTeameErrorChart(team, teamErrorChart) {
+
+    teamErrorChart.data.datasets = [];
+
+    let games = team.gameHistory
+        .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt && !game.forfeit)
+        .sort((a, b) => a.date - b.date);
+
+    let seedingRp = team.getRankingPoints(rankingPeriodStartDt);
+    if (seedingRp) {
+        let error = seedingRp - team.rankingPoints;
+
+        teamErrorChart.data.datasets.push({
+            label: 'Error',
+            data: [{ 
+                x: 'Virtual Game',
+                y: error 
+            }],
+            borderColor: error > 0 ? 'rgb(54, 162, 235)' : 'rgb(255, 99, 132)',
+            backgroundColor: error > 0 ? 'rgb(54, 162, 235, .5)' : 'rgb(255, 99, 132, .5)',
+            borderWidth: 2,
+            borderRadius: 5,
+            barPercentage: .25,
+            });
+    }
+
+    games.forEach(game => {
+        let opponent = game.getOpponentTeam(team.teamId);
+        let teamRp = team.rankingPoints;
+        let opponentRp = opponent.rankingPoints;
+        let expectedDiff = teamRp - opponentRp;
+        let actualDiff = game.scores[team.teamId] - game.scores[opponent.teamId];
+        let error = actualDiff - expectedDiff;
+
+        teamErrorChart.data.datasets.push({
+                label: "Error",
+                data: [ { 
+                    x: `${game.date.toLocaleDateString(undefined, {year:'2-digit',month:'numeric',day:'numeric'})} ${game.date.toLocaleTimeString(undefined,{timeStyle:'short'})}`, 
+                    y: error, 
+                    game: game } ],
+                borderColor: error > 0 ? 'rgb(54, 162, 235)' : 'rgb(255, 99, 132)',
+                backgroundColor: error > 0 ? 'rgb(54, 162, 235, .5)' : 'rgb(255, 99, 132, .5)',
+                borderWidth: 2,
+                borderRadius: 5,
+                barPercentage: game.weight,
+                });
+    });
+}
+
 function setupTeamDetails() {
     let $teamDetailModal = $('#team-modal');
     let $olderGamesBtn = $('#load-older-games');
@@ -423,48 +472,136 @@ function setupTeamDetails() {
     
     // Initialize the Team Ranking Point History chart. Data will be set on team row click.
     let teamChart = new Chart(document.getElementById('team-chart'), {
-                data: {
-                    datasets: [{
-                        type: 'scatter',
-                        label: 'Games',
-                        data: [],
-                        pointRadius: 5,
-                    }, {
-                        type: 'lineWithErrorBars',
-                        label: 'Ranking Points ± Standard Error',
-                        data: [],
-                        showLine: true
-                    }],
-                },
-                options: {
-                    scales: {
-                        x: {
-                            type: 'time',
-                            min: rankingPeriodStartDt,
-                            max: rankingPeriodDeadlineDt
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'nearest',
-                        axis: 'xy'
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    return context[0].raw.title;                                
-                                },
-                                label: function(context) {
-                                    return context.raw.label;
-                                }
-                            }
-                        }
-                    },
-                    responsive: true,
-                    maintainAspectRatio: false
+        data: {
+            datasets: [{
+                type: 'scatter',
+                label: 'Games',
+                data: [],
+                pointRadius: 5,
+            }, {
+                type: 'lineWithErrorBars',
+                label: 'Ranking Points ± Standard Error',
+                data: [],
+                showLine: true
+            }],
+        },
+        options: {
+            scales: {
+                x: {
+                    type: 'time',
+                    min: rankingPeriodStartDt,
+                    max: rankingPeriodDeadlineDt
                 }
-            });
+            },
+            interaction: {
+                intersect: false,
+                mode: 'nearest',
+                axis: 'xy'
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].raw.title;                                
+                        },
+                        label: function(context) {
+                            return context.raw.label;
+                        }
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
+
+    // Initialize the Linear Regression Error chart. Data will be set on team row click.
+    let teamErrorChart = new Chart(document.getElementById('team-error-chart'), {
+        type: 'bar',
+        options: { 
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: {
+                        callback: function(value) { 
+                            let label = this.getLabelForValue(value);
+                            if (value > 0)
+                                return label.split(' ')[0];
+                            return label;
+                         }
+                    },
+                },
+                y: {
+                    stacked: true
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Difference in Actual vs. Expected Score Differentials based on current Ranking Points',
+                    padding: {
+                        top:10,
+                        bottom: 5
+                    }                    
+                },
+                subtitle: {
+                    display: true,
+                    text: 'Ranking Points are calculated using linear regression to minimize error for all games and all teams.',
+                    padding: {
+                        bottom: 8
+                    }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    position: 'nearest',
+                    bodySpacing: 3,
+                    callbacks: {
+                        title: function(context) {
+                            if (context[0].datasetIndex == 0)
+                                return `${rankingPeriodStartDt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}: ${context[0].label}`;
+                            return [
+                                context[0].raw.game.getGameAndEventTitle(),
+                                context[0].raw.game.getGameSummary(team.teamId)
+                            ];
+                        },
+                        beforeBody: function(context) {
+                            if (context[0].datasetIndex == 0) {
+                                let expectedDiff = team.rankingPoints - mrda_config.virtual_team_rp;
+                                let actualDiff = team.getRankingPoints(rankingPeriodStartDt) - mrda_config.virtual_team_rp;
+                                return [
+                                    `${team.getRankingPoints(rankingPeriodStartDt).toFixed(2)}-${mrda_config.virtual_team_rp} vs Virtual Team`,
+                                    `Opponent's Current RP: ${mrda_config.virtual_team_rp}`,
+                                    `Expected Differential: ${expectedDiff > 0 ? '+' : ''}${expectedDiff.toFixed(2)}`,
+                                    `Score Differential: ${actualDiff > 0 ? '+' : ''}${actualDiff.toFixed(2)}`,
+                                ];
+                            }
+                            let game = context[0].raw.game;
+                            let opponent = game.getOpponentTeam(team.teamId);
+                            let expectedDiff = team.rankingPoints - opponent.rankingPoints;
+                            let actualDiff = game.scores[team.teamId] - game.scores[opponent.teamId];
+                            return [
+                                `Opponent's Current RP: ${opponent.rankingPoints}`,
+                                `Expected Differential: ${expectedDiff > 0 ? '+' : ''}${expectedDiff.toFixed(2)}`,
+                                `Score Differential: ${actualDiff > 0 ? '+' : ''}${actualDiff}`,
+                            ];
+                        },
+                        label: function(context) {
+                            return ` Error: ${context.formattedValue > 0 ? '+' : ''}${context.formattedValue}`;
+                        },
+                        footer: function(context) {
+                            if (context[0].datasetIndex == 0)
+                                return 'Game Weight: 25%';
+                            return `Game Weight: ${(context[0].raw.game.weight * 100).toFixed(0)}%`;
+                        }
+                    }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
 
     // Initialize the team game history DataTable. Data will be set on team row click.
     let teamGameTable = new DataTable('#team-games-table', {
@@ -568,8 +705,11 @@ function setupTeamDetails() {
                 title: game.getGameAndEventTitle(),
                 label: `${game.getGameSummary(team.teamId)}: ${game.gamePoints[team.teamId].toFixed(2)}`
             }});
-        setTeamChartRankingHistory(team, teamChart, rankingPeriodStartDt);
+        setTeamChartRankingHistory(team, teamChart);
         teamChart.update();
+
+        setTeameErrorChart(team, teamErrorChart);
+        teamErrorChart.update();
 
         // Game table data filtered to current ranking period.
         teamGameTable.clear().rows.add(team.gameHistory.filter(game => minGameDt <= game.date && game.date < rankingPeriodDeadlineDt)).draw();
@@ -1034,7 +1174,7 @@ $(function() {
     $dateSelect.on('change', handleRankingPeriodChange);
     $regionSelect.on('change', handleRegionChange);
         
-    $('#rankings-generated-dt').text(new Date(rankings_generated_utc).toLocaleString(undefined, {dateStyle: 'short', timeStyle: 'long'}));
+    $('#rankings-generated-dt').text(new Date(mrda_config.rankings_generated_utc).toLocaleString(undefined, {dateStyle: 'short', timeStyle: 'long'}));
 
     $('[data-toggle="tooltip"]').tooltip();
 
