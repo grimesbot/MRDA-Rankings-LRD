@@ -1,1 +1,1 @@
-globalThis.mrda_config = {"rankings_generated_utc": "2026-03-27T20:47:34.145223Z", "virtual_team_rp": 600}
+globalThis.mrda_config = {"rankings_generated_utc": "2026-03-28T15:29:14.143468Z", "virtual_team_rp": 600, "differential_cap": 200}

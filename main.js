@@ -200,20 +200,20 @@ function setupRankingsTable(teams) {
     new DataTable('#rankings-table', {
         columns: [
             { name: 'rank', data: 'rank', width: '1em', className: 'dt-center pe-1', 
-                render: function (data, type, full) { 
+                render: function (data, type, team) { 
                     if (type === 'sort')
-                        return full.rankSort;
+                        return team.rankSort;
                     else if (region != 'GUR')
-                        return full.regionRank;
+                        return team.regionRank;
                     else
                         return data;
                 }
             },
             { data: 'delta', width: '1em', className: 'no-wrap delta dt-center px-1',
-                render: function (data, type, full) {
-                    let delta = region == 'GUR' ? full.delta : full.regionDelta;
+                render: function (data, type, team) {
+                    let delta = region == 'GUR' ? team.delta : team.regionDelta;
                     if (type === 'display') {
-                        if (!full.rank)
+                        if (!team.rank)
                             return '';
                         else if (delta > 0) 
                             return `<i class="bi bi-triangle-fill text-success"></i> <span class="text-success">${delta}</span>`;
@@ -227,12 +227,12 @@ function setupRankingsTable(teams) {
                         return delta;
                 }
              },
-            { data: 'logo', width: '1em', orderable: false, className: 'px-1', render: function (data, type, full) { return data ? `<img class="team-logo" src="${data}">` : ''; } },            
+            { data: 'logo', width: '1em', orderable: false, className: 'px-1', render: function (data, type, team) { return data ? `<img class="team-logo" src="${data}">` : ''; } },            
             { data: 'name', orderable: false, className: 'px-1 text-overflow-ellipsis', 
-                render: function (data, type, full) {
-                    if (['display','export'].includes(type) && full.activeStatus) {
-                        let result = data;
-                        for (let i = 0; i < full.forfeits; i++) {
+                render: function (data, type, team) {
+                    if (['display','export'].includes(type) && team.activeStatus) {
+                        let result = type == 'display' ? `<span class="team-name">${data}</span>` : data;
+                        for (let i = 0; i < team.forfeits; i++) {
                             if (type === 'display')
                                 result += '<sup class="forfeit-penalty">↓</sup>';
                             else if (type === 'export')
@@ -242,17 +242,17 @@ function setupRankingsTable(teams) {
                     }
                     return data;
                 },
-                createdCell: function (td, cellData, rowData, row, col) {
-                    if (rowData.location) 
-                        $(td).append(`<div class="team-location">${rowData.location}</div>`);
+                createdCell: function (td, cellData, team, row, col) {
+                    if (team.location) 
+                        $(td).append(`<div class="team-location">${team.location}</div>`);
                 }
             },
             { data: 'rankingPoints', width: '1em', className: 'px-1' },
-            { data: 'standardError', width: '1em', className: 'px-1 dt-left', render: function (data, type, full) { return type === 'display' ? `±${data}` : data; }},
-            { data: 'activeStatusGameCount', width: '1em', className: 'px-1', render: function (data, type, full) { return type === 'display' && !full.postseasonEligible ? `${data}<span class="postseason-ineligible">*</span>` : data; } },
+            { data: 'standardError', width: '1em', className: 'px-1 dt-left', render: function (data, type, team) { return type === 'display' ? `±${data}` : data; }},
+            { data: 'activeStatusGameCount', width: '1em', className: 'px-1', render: function (data, type, team) { return type === 'display' && !team.postseasonEligible ? `${data}<span class="postseason-ineligible">*</span>` : data; } },
             { data: 'wins', width: '1em', orderable: false, className: 'px-1 dt-center'},
             { data: 'losses', width: '1.6em', orderable: false, className: 'px-1 dt-left'},
-            { data: 'chart', width: '1em', className: 'ps-1 dt-center no-pointer', orderable: false, render: function (data, type, full) { return `<input type="checkbox" class="chart"${data ? ' checked' : ''}></input>`; }}
+            { data: 'chart', width: '1em', className: 'ps-1 dt-center no-pointer', orderable: false, render: function (data, type, team) { return `<input type="checkbox" class="chart"${data ? ' checked' : ''}></input>`; }}
         ],
         data: teams,
         layout: {
@@ -319,6 +319,9 @@ function handleRankingPeriodChange() {
     // Re-rank teams for new dates and update table
     mrdaLinearRegressionSystem.rankTeams(rankingPeriodDeadlineDt, rankingPeriodStartDt, previousQuarterDt);
     $('#rankings-table').DataTable().clear().rows.add(mrdaLinearRegressionSystem.getOrderedTeams(region)).draw();
+
+    // Re-read team games table data with regional ranks
+    $('#team-games-table').DataTable().rows().invalidate('data').draw();
 }
 
 function handleRegionChange() {
@@ -396,8 +399,10 @@ function setTeamChartRankingHistory(team, teamChart, minDate = rankingPeriodStar
             y: ranking.rankingPoints,
             yMin: chartErrs ? errMin : null,
             yMax: chartErrs ? errMax : null,
-            title: dt.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}),
-            label: `RP: ${ranking.rankingPoints} ± ${ranking.standardError} (${errMin.toFixed(2)} .. ${errMax.toFixed(2)})`
+            title: dt.toLocaleDateString(undefined,{weekday: 'long', year:'numeric',month:'long',day:'numeric'}),
+            label: `Ranking Points: ${ranking.rankingPoints}`,
+            stdErr: `Standard Error: ± ${ranking.standardError} (${errMin.toFixed(2)} .. ${errMax.toFixed(2)})`
+
         });
 
         if (predictorDt) {
@@ -407,7 +412,8 @@ function setTeamChartRankingHistory(team, teamChart, minDate = rankingPeriodStar
                 yMin: null,
                 yMax: null,
                 title: `${dt.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})} after game decay`,
-                label: `RP: ${ranking.predictorRankingPoints} ± ${ranking.predictorStandardError} (${(ranking.predictorRankingPoints - ranking.predictorStandardError).toFixed(2)} .. ${(ranking.predictorRankingPoints + ranking.predictorStandardError).toFixed(2)})`
+                label: `Ranking Points: ${ranking.predictorRankingPoints}`,
+                stdErr: `Standard Error: ± ${ranking.predictorStandardError} (${(ranking.predictorRankingPoints - ranking.predictorStandardError).toFixed(2)} .. ${(ranking.predictorRankingPoints + ranking.predictorStandardError).toFixed(2)})`
             });
         }
     }
@@ -426,36 +432,26 @@ function setTeameErrorChart(team, teamErrorChart) {
         .sort((a, b) => a.date - b.date);
 
     let seedingRp = team.getRankingPoints(rankingPeriodStartDt);
-    if (seedingRp) {
-        let error = seedingRp - team.rankingPoints;
-
-        teamErrorChart.data.datasets.push({
-            label: 'Error',
-            data: [{ 
-                x: 'Virtual Game',
-                y: error 
-            }],
-            borderColor: error > 0 ? 'rgb(54, 162, 235)' : 'rgb(255, 99, 132)',
-            backgroundColor: error > 0 ? 'rgb(54, 162, 235, .5)' : 'rgb(255, 99, 132, .5)',
-            borderWidth: 2,
-            borderRadius: 5,
-            barPercentage: .25,
-            });
+    if (seedingRp != null) {
+        games.unshift(new MrdaGame({
+            date: rankingPeriodStartDt,
+            home_team: team.teamId,
+            home_score: seedingRp,
+        }, mrdaLinearRegressionSystem.mrdaTeams, mrdaLinearRegressionSystem.mrdaEvents, true));
     }
 
     games.forEach(game => {
         let opponent = game.getOpponentTeam(team.teamId);
-        let teamRp = team.rankingPoints;
-        let opponentRp = opponent.rankingPoints;
-        let expectedDiff = teamRp - opponentRp;
-        let actualDiff = game.scores[team.teamId] - game.scores[opponent.teamId];
+        let expectedDiff = team.rankingPoints - opponent.rankingPoints;
+        let actualDiff = game.getActualDifferential(team);
         let error = actualDiff - expectedDiff;
 
         teamErrorChart.data.datasets.push({
                 label: "Error",
                 data: [ { 
-                    x: `${game.date.toLocaleDateString(undefined, {year:'2-digit',month:'numeric',day:'numeric'})} ${game.date.toLocaleTimeString(undefined,{timeStyle:'short'})}`, 
-                    y: error, 
+                    x:  game.awayTeamId == VIRTUAL_TEAM_ID ? 'Virtual Game' : `${game.date.toLocaleDateString(undefined, {year:'2-digit',month:'numeric',day:'numeric'})} ${game.date.toLocaleTimeString(undefined,{timeStyle:'short'})}`, 
+                    y: error,
+                    expectedDiff: expectedDiff,
                     game: game } ],
                 borderColor: error > 0 ? 'rgb(54, 162, 235)' : 'rgb(255, 99, 132)',
                 backgroundColor: error > 0 ? 'rgb(54, 162, 235, .5)' : 'rgb(255, 99, 132, .5)',
@@ -478,7 +474,7 @@ function setupTeamDetails() {
         data: {
             datasets: [{
                 type: 'scatter',
-                label: 'Games',
+                label: 'Game Scores vs. Prediction',
                 data: [],
                 pointRadius: 6,
             }, {
@@ -506,12 +502,45 @@ function setupTeamDetails() {
             },
             plugins: {
                 tooltip: {
+                    bodySpacing: 3,
                     callbacks: {
                         title: function(context) {
+                            if (context[0].datasetIndex == 0)
+                                return [
+                                    context[0].raw.game.getGameAndEventTitle(),
+                                    context[0].raw.game.getGameSummary(team.teamId)
+                                ];                            
                             return context[0].raw.title;                                
                         },
+                        beforeBody: function(context) {
+                            if (context[0].datasetIndex == 0) {
+                                let game = context[0].raw.game;
+                                let result = [`Score Differential: ${game.getActualDifferentialDisplay(team)}`];
+                                let predictedDifferential = game.getPredictedDifferentialDisplay(team);
+                                if (predictedDifferential != null)
+                                    result.push(`Predicted Differential: ${predictedDifferential}`);
+                                else
+                                    result.push(`Opponent RP as of game: ${game.getPredictorRankingPoints(game.getOpponentTeam(team.teamId))}`);
+                                return result;
+                            }
+                        },                        
                         label: function(context) {
+                            if (context.datasetIndex == 0) {
+                                let result = context.raw.game.getPerformanceDeltaDisplay(team);
+                                if (result != null)
+                                    return `Score vs. Prediction: ${result}`;
+                                else 
+                                    return `Estimated Ranking Points: ${context.raw.game.getPerformanceDeltaChart(team).toFixed(2)}`;
+                            }                            
                             return context.raw.label;
+                        },
+                        afterBody: function(context) {
+                            if (context[0].datasetIndex == 1)
+                                return context[0].raw.stdErr;
+                        },
+                        footer: function(context) {
+                            if (context[0].datasetIndex == 0 && context[0].raw.game.weight < 1)
+                                return `Game Weight: ${(context[0].raw.game.weight * 100).toFixed(0)}%`;
                         }
                     }
                 }
@@ -531,9 +560,9 @@ function setupTeamDetails() {
                     ticks: {
                         callback: function(value) { 
                             let label = this.getLabelForValue(value);
-                            if (value > 0)
-                                return label.split(' ')[0];
-                            return label;
+                            if (label == 'Virtual Game')
+                                return label;
+                            return label.split(' ')[0];
                          }
                     },
                 },
@@ -570,7 +599,7 @@ function setupTeamDetails() {
                     bodySpacing: 3,
                     callbacks: {
                         title: function(context) {
-                            if (context[0].datasetIndex == 0)
+                            if (context[0].raw.game.awayTeamId == VIRTUAL_TEAM_ID)
                                 return [
                                     `${rankingPeriodStartDt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}: ${context[0].label}`,
                                     `${team.getRankingPoints(rankingPeriodStartDt).toFixed(2)}-${mrda_config.virtual_team_rp} vs Virtual Team`,
@@ -581,31 +610,20 @@ function setupTeamDetails() {
                             ];
                         },
                         beforeBody: function(context) {
-                            if (context[0].datasetIndex == 0) {
-                                let expectedDiff = team.rankingPoints - mrda_config.virtual_team_rp;
-                                let actualDiff = team.getRankingPoints(rankingPeriodStartDt) - mrda_config.virtual_team_rp;
-                                return [
-                                    `Opponent's Current RP: ${mrda_config.virtual_team_rp}`,
-                                    `Expected Differential: ${expectedDiff > 0 ? '+' : ''}${expectedDiff.toFixed(2)}`,
-                                    `Score Differential: ${actualDiff > 0 ? '+' : ''}${actualDiff.toFixed(2)}`,
-                                ];
-                            }
                             let game = context[0].raw.game;
                             let opponent = game.getOpponentTeam(team.teamId);
-                            let expectedDiff = team.rankingPoints - opponent.rankingPoints;
-                            let actualDiff = game.scores[team.teamId] - game.scores[opponent.teamId];
+                            let expectedDiff = context[0].raw.expectedDiff;
+                            let actualDiff = game.getActualDifferentialDisplay(team);
                             return [
                                 `Opponent's Current RP: ${opponent.rankingPoints}`,
                                 `Expected Differential: ${expectedDiff > 0 ? '+' : ''}${expectedDiff.toFixed(2)}`,
-                                `Score Differential: ${actualDiff > 0 ? '+' : ''}${actualDiff}`,
+                                `Score Differential: ${actualDiff}`,
                             ];
                         },
                         label: function(context) {
                             return ` Error: ${context.formattedValue > 0 ? '+' : ''}${context.formattedValue}`;
                         },
                         footer: function(context) {
-                            if (context[0].datasetIndex == 0)
-                                return 'Game Weight: 25%';
                             return `Game Weight: ${(context[0].raw.game.weight * 100).toFixed(0)}%`;
                         }
                     }
@@ -619,22 +637,15 @@ function setupTeamDetails() {
     // Initialize the team game history DataTable. Data will be set on team row click.
     let teamGameTable = new DataTable('#team-games-table', {
         columns: [
-            { width: '1em', className: 'dt-center', name: 'date', data: 'date', render: function (data, type, row) { return type === 'display' ? `<div data-toggle="tooltip" title="${data.toLocaleTimeString(undefined,{timeStyle:'short'})}">${data.toLocaleDateString(undefined,{weekday:'short'})}</div>` : data }},
-            { width: '1em', className: 'dt-center narrow', render: function (data, type, row) { return row.getWL(team.teamId) }},
-            { width: '1em', className: 'dt-center narrow', render: function (data, type, row) { return row.getAtVs(team.teamId) }},
-            //{ width: '5em', className: 'dt-right', render: function (data, type, row) { return row.getWlAtVs(team.teamId) }},
+            { width: '1em', className: 'dt-center', name: 'date', data: 'date', render: function (data, type, game) { return type === 'display' ? `<div data-toggle="tooltip" title="${data.toLocaleTimeString(undefined,{timeStyle:'short'})}">${data.toLocaleDateString(undefined,{weekday:'short'})}</div>` : data }},
+            { width: '1em', className: 'dt-center narrow', render: function (data, type, game) { return game.getWL(team.teamId) }},
+            { width: '1em', className: 'dt-center narrow', render: function (data, type, game) { return game.getAtVs(team.teamId) }},
             { width: '1em', className: 'px-1', render: function(data, type, game) {return `<img class="opponent-logo" src="${game.getOpponentTeam(team.teamId).logo}">`; } },
-            { className: 'ps-1 text-overflow-ellipsis', render: function (data, type, game) { 
-                let opponent = game.getOpponentTeam(team.teamId);
-                let teamRanking = opponent.getRanking(game.date);
-                if (teamRanking && teamRanking.rank)
-                    return `<span class="team-rank" data-toggle="tooltip" title="Global rank as of ${teamRanking.date.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'})}">${teamRanking.rank}</span> ${opponent.name}`
-                return opponent.name; 
-            }},
-            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, row) { return row.getTeamsScore(team.teamId) }},
-            { width: '1em', className: 'dt-center', render: function (data, type, row) { return team.teamId in row.actualDifferentials ? (row.actualDifferentials[team.teamId] > 0 ? `+${row.actualDifferentials[team.teamId]}` : row.actualDifferentials[team.teamId]) : '' } },            
-            { width: '1em', className: 'dt-center', render: function (data, type, row) { return team.teamId in row.expectedDifferentials ? (row.expectedDifferentials[team.teamId] > 0 ? `+${row.expectedDifferentials[team.teamId].toFixed(2)}` : row.expectedDifferentials[team.teamId].toFixed(2)) : '' } },
-            { width: '1em', className: 'dt-center', data: 'weight', render: function(data, type, game) {return data ? `${(data * 100).toFixed(0)}%` : ''; } }
+            { className: 'ps-1 text-overflow-ellipsis', render: function (data, type, game) { return game.getOpponentTeam(team.teamId).getNameWithRank(game.date, region); } },
+            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, game) { return game.getTeamsScore(team.teamId) }},
+            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, game) { return game.getActualDifferentialDisplayWithTooltip(team); } },
+            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, game) { return game.getPredictedDifferentialWithTooltip(team); } },
+            { width: '1em', className: 'dt-center no-wrap', data: 'weight', render: function(data, type, game) { return game.getPerformanceDeltaWithIcon(team); } }
         ],
         data: [],
         paging: false,
@@ -652,29 +663,45 @@ function setupTeamDetails() {
                 let tr = document.createElement('tr');
                 let th = document.createElement('th');
 
-                th.colSpan = 6;
+                let rpBefore = team.getPredictorRankingPoints(group.startDt);
+                let rpAfter = team.getRankingPoints(group.endDt, true);
+
+                th.colSpan = 5;
                 th.textContent = group.getEventTitleWithDate();
                 th.className = 'text-overflow-ellipsis';
                 tr.appendChild(th);
 
                 th = document.createElement('th');
-                th.colSpan = 3;
                 th.className = 'rp-change';
-
-                let rpBefore = team.getPredictorRankingPoints(group.startDt);
-                let rpAfter = team.getRankingPoints(group.endDt, true);
-
-                if (rpBefore && rpAfter) {
-                    let icon = 'bi-arrow-right';
-                    if (rpAfter > rpBefore)
-                        icon = 'bi-arrow-up-right';
-                    else if (rpBefore > rpAfter)
-                        icon = 'bi-arrow-down-right';
-                    th.innerHTML = `${rpBefore.toFixed(2)} <i class='bi ${icon}'></i> ${rpAfter.toFixed(2)}`;                    
-                } else if (rpAfter) {
-                    th.innerHTML = rpAfter.toFixed(2);
+                if (rpBefore == null) {
+                    th.colSpan = 4;
+                    if (rpAfter != null)
+                        th.innerHTML = `Resulting Ranking Points: ${rpAfter.toFixed(2)}`;
+                    tr.appendChild(th);
+                    return tr;
                 }
+                th.colSpan = 3;
+                th.innerHTML = 'Ranking Points:';
+                tr.appendChild(th);
 
+                th = document.createElement('th');
+                th.className = 'rp-delta';
+                let rpDelta = rpAfter - rpBefore;
+
+                th.setAttribute('data-toggle','tooltip');
+                th.setAttribute('data-bs-html','true');
+                th.title = 'Difference in Ranking Points from all games this weekend.<br>';
+                th.title += `Before: ${rpBefore.toFixed(2)}<br>`
+                th.title += `After: ${rpAfter.toFixed(2)}<br>`                
+
+                if (rpAfter > rpBefore) {
+                    let icon = '<i class="bi bi-triangle-fill text-success"></i>';
+                    th.innerHTML = `${icon} <span class="rp-delta text-success">+${rpDelta.toFixed(2)}</span>`;
+                } else if (rpBefore > rpAfter) {
+                    let icon = '<i class="bi bi-triangle-fill down text-danger"></i>';
+                    th.innerHTML = `${icon} <span class="rp-delta text-danger">${rpDelta.toFixed(2)}</span>`;
+                } else
+                    th.innerHTML = `<span class="rp-delta">${rpDelta.toFixed(2)}</span>`;
                 tr.appendChild(th);
                 return tr;
             },
@@ -687,9 +714,8 @@ function setupTeamDetails() {
             handler: false,
             indicators: false
         },
-        drawCallback: function (settings) {
-            $('#team-games-table [data-toggle="tooltip"]').tooltip();
-        }
+    }).on('draw', function() {
+        $('#team-games-table [data-toggle="tooltip"]').tooltip();
     });
 
     $('#rankings-table-container').on('click', '#rankings-table td:not(.no-pointer)', function (e) {
@@ -711,12 +737,11 @@ function setupTeamDetails() {
         $('#team-logo').attr('src', team.logo);
         $('#team-location').text(team.location);
 
-        teamChart.data.datasets[0].data = team.gameHistory.filter(game => game.gamePoints[team.teamId]).map(game => {
+        teamChart.data.datasets[0].data = team.gameHistory.map(game => {
             return { 
                 x: game.date, 
-                y: game.gamePoints[team.teamId],
-                title: game.getGameAndEventTitle(),
-                label: `${game.getGameSummary(team.teamId)}: ${game.gamePoints[team.teamId].toFixed(2)}`
+                y: game.getPerformanceDeltaChart(team),
+                game: game
             }});
         setTeamChartRankingHistory(team, teamChart);
         teamChart.update();
@@ -756,11 +781,11 @@ async function setupUpcomingGames() {
         columns: [
             { data: 'event.startDt', visible: false },
             { data: 'date', visible: false },
-            { data: 'homeTeam.name', width: '30em', className: 'dt-right', render: function(data, type, game) {return `${data}<div class="team-rp">${game.homeTeam.getRankingPoints(game.date) ?? '&nbsp;'}</div>`; } },
-            { data: 'homeTeam.logo', width: '1em', render: function(data, type, full) {return `<img class="team-logo" class="ms-2" src="${data}">`; } },
-            { width: '1em', className: 'dt-center',  render: function(data, type, game) { return game.homeTeamId in game.expectedDifferentials ? game.expectedDifferentials[game.homeTeamId].toFixed(2) : ''; } },
-            { data: 'awayTeam.logo', width: '1em', render: function(data, type, full) {return `<img class="team-logo" class="ms-2" src="${data}">`; } },                
-            { data: 'awayTeam.name', width: '30em', render: function(data, type, game) {return `${data}<div class="team-rp">${game.awayTeam.getRankingPoints(game.date) ?? '&nbsp;'}</div>`; }  },
+            { data: 'homeTeam.name', width: '30em', className: 'dt-right', render: function(data, type, game) {return `<span class="team-name">${data}</span><div class="team-rp">${game.homeTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`; } },
+            { data: 'homeTeam.logo', width: '1em', render: function(data, type, game) {return `<img class="team-logo" class="ms-2" src="${data}">`; } },
+            { data: 'getPredictedDifferentialDisplay()', width: '1em', className: 'dt-center' },
+            { data: 'awayTeam.logo', width: '1em', render: function(data, type, game) {return `<img class="team-logo" class="ms-2" src="${data}">`; } },                
+            { data: 'awayTeam.name', width: '30em', render: function(data, type, game) {return `<span class="team-name">${data}</span><div class="team-rp">${game.awayTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`; }  },
         ],
         data: gamesWithoutScores,
         rowGroup: {
@@ -811,7 +836,7 @@ async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, 
 
     data.seeding = Object.fromEntries(
         Object.entries(mrdaLinearRegressionSystem.getRankingHistory(seedDate))
-            .map(([teamId, teamRanking]) => [teamId, teamRanking.rankingPoints])
+            .map(([teamId, teamRanking]) => [teamId, teamRanking.rankingPoints - mrda_config.virtual_team_rp])
     );
     
     try {
@@ -978,12 +1003,31 @@ function setupAllGames() {
             { data: 'event.startDt', visible: false },
             { data: 'eventId', visible: false },                
             { data: 'date', visible: false },
-            { data: 'homeTeam.name', title: 'Home Team', className: 'dt-right', render: function(data, type, game) { return game.forfeit && game.forfeitTeamId == game.homeTeamId ? `${data}<sup class="forfeit-info">↓</sup>` : data; } },
+            { className: 'dt-right', render: function(data, type, game) { 
+                let result = game.homeTeam.getNameWithRank(game.date, region);
+                if (game.forfeit && game.forfeitTeamId == game.homeTeamId)
+                    result += '<sup class="forfeit-info">↓</sup>';
+                let rankingPoints = game.awayTeamId == VIRTUAL_TEAM_ID ? game.homeTeam.getRankingPoints(game.date) : game.homeTeam.getPredictorRankingPoints(game.date);
+                result += `<div class="team-rp">${rankingPoints ?? '&nbsp;'}</div>`;
+                return result;
+            } },
             { data: 'homeTeam.logo', width: '1em', render: function(data, type, game) { return `<img class="ms-2 team-logo" src="${data}">`; } },
-            { name: 'score', width: '7em', className: 'dt-center', title: 'Score', render: function(data, type, game) {return `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}${game.status < 6 ? '<sup class="unvalidated-info">†</sup>' : ''}`} },
+            { name: 'score', width: '7em', className: 'dt-center no-wrap', render: function(data, type, game) {
+                let result = `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}`;
+                if (game.status < 6)
+                    result += '<sup class="unvalidated-info">†</sup>';
+                result += `<div class="performance-deltas">${game.getPerformanceDeltaWithIcon(game.homeTeam,1) ?? '&nbsp;'}&nbsp;&nbsp;${game.getPerformanceDeltaWithIcon(game.awayTeam,1) ?? '&nbsp;'}</div>`;
+                return result;
+            } },
             { data: 'awayTeam.logo', width: '1em', render: function(data, type, game) { return `<img class="ms-2 team-logo" src="${data}">`; } },                
-            { data: 'awayTeam.name', title: 'Away Team', render: function(data, type, game) { return game.forfeit && game.forfeitTeamId == game.awayTeamId ? `${data}<sup class="forfeit-info">↓</sup>` : data; } },
-            { data: 'weight', title: 'Weight', width: '1em', render: function(data, type, game) { return data ? `${(data * 100).toFixed(0)}%` : ''; } }
+            { render: function(data, type, game) { 
+                let result = game.awayTeam.getNameWithRank(game.date, region);
+                if (game.forfeit && game.forfeitTeamId == game.awayTeamId)
+                    result += '<sup class="forfeit-info">↓</sup>';
+                result += `<div class="team-rp">${game.awayTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`;
+                return result;
+            } },
+            { data: 'weight', width: '1em', render: function(data, type, game) { return data ? `${(data * 100).toFixed(0)}%` : ''; } }
         ],
         data: [],
         rowGroup: {
@@ -998,6 +1042,7 @@ function setupAllGames() {
         drawCallback: function (settings) {
             $('#all-games-table .unvalidated-info').tooltip({title: 'Score not yet validated'});            
             $('#all-games-table .forfeit-info').tooltip({title: 'Forfeit'});
+            $('#all-games-table [data-toggle="tooltip"]').tooltip();            
         }
     });    
 
@@ -1015,9 +1060,7 @@ function setupAllGames() {
                     games.push(new MrdaGame({
                         date: rankingPeriodStartDt,
                         home_team: teamId,
-                        home_score: ranking.rankingPoints.toFixed(2),
-                        away_score: 0,
-                        weight: .25,
+                        home_score: ranking.rankingPoints.toFixed(2)
                     }, mrdaLinearRegressionSystem.mrdaTeams, mrdaLinearRegressionSystem.mrdaEvents, true));
                 }
             }
@@ -1091,7 +1134,6 @@ function setupErrorSummary() {
             { title: 'End Date', data: 'maxDt', render: DataTable.render.date()},            
             { title: 'Game Count', data: 'gameCount'},
             { title: 'Average Error', data: 'averageError' },            
-            { title: 'Mean Absolute Log Error', data: 'meal', render: function(data, type) {return data ? `${(data * 100).toFixed(2)}%` : ''; }}
         ],
         data: [],
         dom: 't',
@@ -1148,23 +1190,19 @@ function setupErrorSummary() {
                 maxDt: null
             });
 
-            let predictedGames = mrdaLinearRegressionSystem.mrdaGames.filter(game => game.absLogError != null);
+            let predictedGames = mrdaLinearRegressionSystem.mrdaGames.filter(game => game.getPerformanceDelta(game.homeTeam) != null);
             for (const data of tableData) {
                 let games = predictedGames.filter(game => (data.minDt == null || data.minDt <= game.date) && (data.maxDt == null || game.date < data.maxDt));
                 data.gameCount = games.length;
                 if (games.length > 0) {
                     let errSum = 0;
-                    let absLogErrSum = 0;
                     for (const game of games) {
-                        let error = Math.abs(game.scores[game.homeTeamId] - game.scores[game.awayTeamId] - game.expectedDifferentials[game.homeTeamId]);
+                        let error = Math.abs(game.getPerformanceDelta(game.homeTeam));
                         errSum += error;
-                        absLogErrSum += game.absLogError;
                     }
                     data.averageError = (errSum / games.length).toFixed(2);
-                    data.meal = Math.exp(absLogErrSum/data.gameCount) - 1;
                 } else {
                     data.averageError = null;
-                    data.meal = null;
                 }
             }
 

@@ -30,6 +30,7 @@ team_info = {
     "17908a": { "region": "AM", "name": "Disorder", "location":"Ciudad de México – MEX", "distance_clause_applies": True }, # Disorder (A)
     "17912a": { "region": "AM", "name": "Tampa Death Rollers", "location":"Tampa, Florida – USA" }, # Tampa Roller Derby (A)
     "17914a": { "region": "AM", "name": "Dallas Y'allhalla", "location":"The Colony, Texas – USA" }, # Dallas Derby Devils (A)
+    "17914b": { "region": "AM", "name": "Dallas Brawl'Halla", "location":"The Colony, Texas – USA" }, # Dallas Derby Devils (B)    
 
     "2692a": { "region": "EUR", "name": "Crash Test Brummies", "location":"Halesowen, Birmingham – UK" }, # Crash Test Brummies (A)
     "2702a": { "region": "EUR", "name": "Manchester New Wheeled Order", "location":"Manchester – UK" }, # Manchester Roller Derby (A)

@@ -165,20 +165,16 @@
                         <div class="table-responsive">
                             <table id="team-games-table" class="table table-striped">
                                 <thead>
-                                    <tr class="dtrg-group dtrg-level-0">
-                                        <th colspan="5">Game History</th>
-                                        <th colspan="4" class="rp-change" data-toggle="tooltip" title="Ranking Points change caused by all new games this week.">RP: Before <i class="bi bi-arrow-right"></i> After</th>
-                                    </tr>
                                     <tr>
                                         <th></th>
                                         <th></th>
                                         <th></th>
                                         <th></th>
-                                        <th></th>
-                                        <th>Score</th>
-                                        <th data-toggle="tooltip" title="Actual score differential">Diff</th>
-                                        <th data-toggle="tooltip" title="Expected score differential as of game date">Exp</th>
-                                        <th data-toggle="tooltip" title="Game weight for least weighted squares linear regression algorithm. Weights diminish for games with score differential beyond 200">Wt</th>
+                                        <th class="dt-center">Game History</th>
+                                        <th class="dt-center">Score</th>
+                                        <th class="dt-center" data-toggle="tooltip" title="Actual score differential">Diff.</th>
+                                        <th data-toggle="tooltip" title="Predicted score differential as of game date">Pred.</th>
+                                        <th data-toggle="tooltip" title="Difference between actual and predicted score differential" class="dt-center"><i class="bi bi-triangle"></i></th>
                                     </tr>
                                 </thead>
                             </table>
@@ -224,7 +220,7 @@
             <div class="modal-dialog modal-xl modal-fullscreen-xl-down">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h1 class="modal-title fs-5" id="predictor-modal-label">Expected Score Differential Calculator</h1>
+                        <h1 class="modal-title fs-5" id="predictor-modal-label">Predicted Score Differential Calculator</h1>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -251,7 +247,7 @@
                                     <img id="predictor-home-logo" class="predictor-logo" src="img\blank.png" >
                             </div>
                             <div class="p-2 text-center">
-                                <label for="predictor-diff">Expected Score Differential</label>
+                                <label for="predictor-diff">Predicted Score Differential</label>
                                 <div id="predictor-diff">&nbsp;</div>
                             </div>
                             <div class="p-2">
@@ -288,7 +284,21 @@
                     </div>
                     <div class="modal-body">
                         <div class="table-responsive">
-                            <table id="all-games-table" class="table table-striped"></table>
+                            <table id="all-games-table" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th class="dt-right">Home Team<div class="team-rp">RP as of Game</div></th>
+                                        <th></th>
+                                        <th class="dt-center">Score<div class="performance-deltas">Prediction Δ</div></th>
+                                        <th></th>
+                                        <th>Away Team<div class="team-rp">RP as of Game</div></th>
+                                        <th>Weight</th>
+                                    </tr>
+                                </thead>
+                            </table>
                             <div class="annotations">
                                 <div><sup>†</sup>Scores not yet validated</div>
                                 <div><sup>↓</sup>Forfeit</div>                                

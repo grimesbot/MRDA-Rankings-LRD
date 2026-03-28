@@ -120,9 +120,14 @@ th.narrow {
     height: 2.5em;
 }
 
+.team-name {
+    font-weight: 500;
+}
+
 .team-location,
 .team-rp,
-.team-rank {
+.team-rank,
+.performance-deltas {
     font-size: .8em;
 }
 
@@ -143,7 +148,9 @@ td.delta span {
     font-size: .75em;
 }
 
-td.delta i.down {
+td.delta i.down,
+#team-games-table i.down,
+.performance-deltas i.down {
     display: inline-block;
     transform: rotate(180deg);    
 }
@@ -151,6 +158,11 @@ td.delta i.down {
 #rankings-table td:not(.no-pointer),
 #upcoming-games-table tr:not(.dtrg-group) {
     cursor: pointer;
+}
+
+#rankings-table tbody tr:hover .team-name,
+#upcoming-games-table tbody tr:hover .team-name {
+    text-decoration: underline;
 }
 
 .annotations {
@@ -192,7 +204,14 @@ td.delta i.down {
     white-space: nowrap;
 }
 
-#team-games-table tbody .rp-change {
+#team-games-table .rp-delta {
+    text-align: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+#team-games-table tbody .rp-change,
+#team-games-table tbody .rp-delta {
     font-weight: var(--bs-body-font-weight);
     font-size: var(--bs-body-font-size);
 }
@@ -203,6 +222,19 @@ td.delta i.down {
 
 .opponent-logo {
     height: 2em;
+}
+
+#team-games-table i.bi-triangle-fill {
+    font-size: .4em;
+}
+
+#team-games-table th i {
+    font-size: .75em;
+}
+
+#team-games-table .performance-delta,
+#team-games-table td.rp-delta {
+    font-size: .9em;
 }
 
 /* Predictor */

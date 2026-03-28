@@ -290,7 +290,8 @@ print("Completed " + str(calc_count) + " ranking calculations in " + str(round(t
 rp_transform = math.ceil(-rp_min / 100) * 100
 mrda_config = {
     "rankings_generated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-    "virtual_team_rp": rp_transform
+    "virtual_team_rp": rp_transform,
+    "differential_cap": DIFFERENTIAL_CAP
     }
 write_json_to_file(mrda_config, "mrda_config.js", "mrda_config")
 write_json_to_file(mrda_config, "mrda_config.json")
