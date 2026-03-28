@@ -230,8 +230,8 @@ function setupRankingsTable(teams) {
             { data: 'logo', width: '1em', orderable: false, className: 'px-1', render: function (data, type, team) { return data ? `<img class="team-logo" src="${data}">` : ''; } },            
             { data: 'name', orderable: false, className: 'px-1 text-overflow-ellipsis', 
                 render: function (data, type, team) {
+                    let result = type == 'display' ? `<span class="team-name">${data}</span>` : data;
                     if (['display','export'].includes(type) && team.activeStatus) {
-                        let result = type == 'display' ? `<span class="team-name">${data}</span>` : data;
                         for (let i = 0; i < team.forfeits; i++) {
                             if (type === 'display')
                                 result += '<sup class="forfeit-penalty">↓</sup>';
@@ -240,7 +240,7 @@ function setupRankingsTable(teams) {
                         }
                         return result;
                     }
-                    return data;
+                    return result;
                 },
                 createdCell: function (td, cellData, team, row, col) {
                     if (team.location) 
