@@ -1,4 +1,4 @@
-async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, $loadingOverlay) {
+const populatePredictorChart = async (date, homeTeam, awayTeam, predictorChart, $loadingOverlay) => {
     $loadingOverlay.find('.spinner-border').show();
     $loadingOverlay.find('.unavailable').hide();
     $loadingOverlay.show();
@@ -59,7 +59,37 @@ async function populatePredictorChart(date, homeTeam, awayTeam, predictorChart, 
   }
 }
 
-function predictGame(predictorChart, $loadingOverlay) {
+const populateMatchupHistory = matchupHistoryTable => {
+    $('#matchup-history-home-wins').html('&nbsp;');
+    $('#matchup-history-away-wins').html('&nbsp;');
+    $('#matchup-history-game-count').html('&nbsp;');
+
+    matchupHistoryTable.clear().draw();
+
+    let homeTeamId = $('#predictor-home').val();
+    let awayTeamId = $('#predictor-away').val()
+
+    if (homeTeamId && awayTeamId && homeTeamId != awayTeamId) {
+        let games = mrdaRankings.mrdaGames.filter(game => game.date < rankingPeriodDeadlineDt
+            && (game.homeTeamId == homeTeamId || game.awayTeamId == homeTeamId) 
+            && (game.homeTeamId == awayTeamId || game.awayTeamId == awayTeamId)
+            && game.homeTeamId in game.scores && game.awayTeamId in game.scores);
+
+        let homeWins = games.filter(game => game.scores[homeTeamId] > game.scores[game.getOpponentTeamId(homeTeamId)]).length;
+        let awayWins = games.filter(game => game.scores[awayTeamId] > game.scores[game.getOpponentTeamId(awayTeamId)]).length;
+
+        $('#matchup-history-home-wins').text(homeWins);
+        $('#matchup-history-away-wins').text(awayWins);
+        $('#matchup-history-game-count').text(games.length);
+        matchupHistoryTable.clear().rows.add(games).draw();
+    }
+}
+
+const predictGame = (predictorChart, $loadingOverlay) => {
+    $('#predictor-home-rp').html('&nbsp;');
+    $('#predictor-away-rp').html('&nbsp;');
+    $('#predictor-ratio').html('&nbsp;');
+
     predictorChart.data.datasets = [];
     predictorChart.update();
 
@@ -72,33 +102,30 @@ function predictGame(predictorChart, $loadingOverlay) {
     let awayRp = null;
 
     if (homeTeam) {
-        $('#predictor-home-logo').attr('src',homeTeam.logo);
+        $('#predictor-home-logo, #matchup-history-home-logo').attr('src',homeTeam.logo);
+        $('.predictor-home-team').data('team-id', homeTeam.teamId);
         homeRp = homeTeam.getPredictorRankingPoints(date);
         if (homeRp)
             $('#predictor-home-rp').text(homeTeam.getPredictorPointsWithError(date));
-        else
-            $('#predictor-home-rp').html('&nbsp;');
     }
 
     if (awayTeam) {
-        $('#predictor-away-logo').attr('src',awayTeam.logo);
+        $('#predictor-away-logo, #matchup-history-away-logo').attr('src',awayTeam.logo);
+        $('.predictor-away-team').data('team-id', awayTeam.teamId);
         awayRp = awayTeam.getPredictorRankingPoints(date);
         if (awayRp)
             $('#predictor-away-rp').text(awayTeam.getPredictorPointsWithError(date));
-        else
-            $('#predictor-away-rp').html('&nbsp;');
     }
 
     if (homeRp && awayRp && homeTeam != awayTeam) {
         let diff = homeRp - awayRp;
         $('#predictor-diff').text(`${diff > 0 ? "+" : ""}${diff.toFixed(2)}`);
         populatePredictorChart(date, homeTeam, awayTeam, predictorChart, $loadingOverlay);
-    } else
-        $('#predictor-diff').html('&nbsp;');
+    }
 }
 
 // Setup predictor modal
-$(function() {
+$(() => {
     let $loadingOverlay = $('#predictor-chart-container .loading-overlay');
     $loadingOverlay.hide();
     $loadingOverlay.find('.unavailable').hide();
@@ -128,7 +155,7 @@ $(function() {
                         text: 'Potential Score Differential (Home - Away)',
                     },
                     ticks: {
-                        callback: function(value, index, ticks) {
+                        callback: (value, index, ticks) => {
                             return value > 0 ? `+${value}` : value;
                         }
                     }
@@ -141,7 +168,7 @@ $(function() {
                         text: 'Estimated Change in Ranking Points',
                     },
                     ticks: {
-                        callback: function(value, index, ticks) {
+                        callback: (value, index, ticks) => {
                             return value > 0 ? `+${value}` : value;
                         }
                     },
@@ -155,10 +182,10 @@ $(function() {
             plugins: {
                 tooltip: {
                     callbacks: {
-                        title: function(context) {
+                        title: context => {
                             return `Potential Score Differential: ${context[0].raw.x > 0 ? "+" : ""}${context[0].label}`;
                         },
-                        label: function(context) {
+                        label: context => {
                             return `${context.dataset.label}: ` + (context.raw.y > 0 ? `+${context.raw.y}` : context.raw.y);
                         }
                     }
@@ -176,6 +203,121 @@ $(function() {
         },
     });
 
-    $teamSelects.change(function() { predictGame(predictorChart, $loadingOverlay); });
-    $date.change(function() { predictGame(predictorChart, $loadingOverlay); });
+    let outsideRankingPeriodLegend = document.createElement('div');
+    outsideRankingPeriodLegend.className = 'outside-ranking-period';
+    outsideRankingPeriodLegend.innerHTML = 'Games older than current Ranking Period';
+
+    let matchupHistoryTable = new DataTable('#matchup-history-table', {
+        columns: [
+            { data: 'date', visible: false },
+            { data: 'homeTeam.name', className: 'dt-right home', 
+                render: (data, type, game) => { 
+                    let result = game.homeTeam.getNameWithRank(game.date, region);
+                    if (game.forfeit && game.forfeitTeamId == game.homeTeamId)
+                        result += '<sup class="forfeit-info">↓</sup>';
+                    let rankingPoints = game.awayTeamId == VIRTUAL_TEAM_ID ? game.homeTeam.getRankingPoints(game.date) : game.homeTeam.getPredictorRankingPoints(game.date);
+                    result += `<div class="team-rp">${rankingPoints ?? '&nbsp;'}</div>`;
+                    return result;
+                },
+                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
+                    let $teamName = $(cell).find('.team-name');
+                    $teamName.attr('data-bs-toggle', 'modal');
+                    $teamName.attr('data-bs-target', '#team-modal');
+                    $teamName.data('team-detail', 'home');                    
+                }
+            },
+            { data: 'homeTeam.logo', width: '1em', 
+                render: (data, type, game) => { return `<img class="ms-2 team-logo home" src="${data}">`; },
+                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
+                    let $teamLogo = $(cell).find('.team-logo');
+                    $teamLogo.attr('data-bs-toggle', 'modal');
+                    $teamLogo.attr('data-bs-target', '#team-modal');
+                    $teamLogo.data('team-detail', 'home');                    
+                } 
+            },
+            { name: 'score', width: '7em', className: 'no-wrap dt-center', render: (data, type, game) => {
+                return `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}<div class="performance-deltas">${game.getPerformanceDeltaWithIcon(game.homeTeam,1)}&nbsp;&nbsp;${game.getPerformanceDeltaWithIcon(game.awayTeam,1)}</div>`;
+            } },
+            { data: 'awayTeam.logo', width: '1em', 
+                render: (data, type, game) => { return `<img class="ms-2 team-logo away" src="${data}">`; },
+                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
+                    let $teamLogo = $(cell).find('.team-logo');
+                    $teamLogo.attr('data-bs-toggle', 'modal');
+                    $teamLogo.attr('data-bs-target', '#team-modal');
+                    $teamLogo.data('team-detail', 'away');                    
+                }
+            },
+            { data: 'awayTeam.name', className: 'away', 
+                render: (data, type, game) => {
+                    let result = game.awayTeam.getNameWithRank(game.date, region);
+                    if (game.forfeit && game.forfeitTeamId == game.awayTeamId)
+                        result += '<sup class="forfeit-info">↓</sup>';
+                    result += `<div class="team-rp">${game.awayTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`;
+                    return result; 
+                },
+                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
+                    let $teamName = $(cell).find('.team-name');
+                    $teamName.attr('data-bs-toggle', 'modal');
+                    $teamName.attr('data-bs-target', '#team-modal');
+                    $teamName.data('team-detail', 'away');                    
+                } 
+            }
+        ],
+        data: [],
+        rowGroup: {
+            dataSrc: ['getGameAndEventTitle()']
+        },
+        lengthChange: false,
+        order: [[0, 'desc']],
+        ordering: {
+            handler: false
+        },
+        layout: {
+            topStart: null,
+            topEnd: null,
+            bottomStart: outsideRankingPeriodLegend
+        },
+        language: {
+            emptyTable: 'No previous games between these teams.',
+            info: 'Showing _START_ to _END_ of _TOTAL_ games',
+            infoEmpty: 'Showing 0 to 0 of 0 games.'
+        },
+        createdRow: (row, game, dataIndex) => {
+            if (game.date < rankingPeriodStartDt)
+                $(row).addClass('outside-ranking-period');
+        },        
+        drawCallback: settings => {
+            $('#matchup-history-table .forfeit-info').tooltip({title: 'Forfeit'});
+            $('#matchup-history-table [data-toggle="tooltip"]').tooltip();
+        }
+    });
+
+    $('#predictor-modal').on('show.bs.modal', e => {
+        let clicked = e.relatedTarget;
+        let tr = clicked.closest('tr');
+        if (!tr) return;
+        let dt = $(clicked.closest('table')).DataTable();
+        let row = dt.row(tr);
+        let data = row.data();
+
+        if (data instanceof MrdaGame) {
+            $teamSelects.filter('#predictor-home').val(data.homeTeamId);
+            $teamSelects.filter('#predictor-away').val(data.awayTeamId);
+            $date[0].valueAsDate = data.date;
+            predictGame(predictorChart, $loadingOverlay); 
+            populateMatchupHistory(matchupHistoryTable);
+        }
+    });    
+
+    $teamSelects.change(() => { 
+        predictGame(predictorChart, $loadingOverlay);
+        populateMatchupHistory(matchupHistoryTable);        
+    });
+
+    $date.change(() => { predictGame(predictorChart, $loadingOverlay); });
+
+    $('#region').on('change', () => {
+        // Re-read team matchup history table table data with regional ranks
+        matchupHistoryTable.rows().invalidate('data').draw();
+    });    
 });

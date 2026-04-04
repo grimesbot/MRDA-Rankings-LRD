@@ -114,7 +114,7 @@ class MrdaTeam {
             // Check the next ranking for Ranking Points to see if they've fallen off & return no value for predictor.
             let nextRanking = this.getRanking(date, true, seedDate);
             if (nextRanking && nextRanking.date > date && !nextRanking.rankingPoints)
-                    return null;
+                return null;
 
             // If we don't have predictor ranking points, no new games this week so they're the same.
             return ranking.rankingPoints;

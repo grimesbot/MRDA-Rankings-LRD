@@ -5,9 +5,9 @@ const urlParams = new URLSearchParams(window.location.search);
 let rankingPeriodDeadlineDt = null;
 let rankingPeriodStartDt = null;
 let previousQuarterDt = null;
-let region = null;
+let region = 'GUR';
 
-function setRankingDates($dateSelect) {
+const setRankingDates = $dateSelect => {
     rankingPeriodDeadlineDt = new Date(`${$dateSelect.val()} 00:00`);
     rankingPeriodStartDt = getSeedDate(rankingPeriodDeadlineDt);
 
@@ -15,11 +15,7 @@ function setRankingDates($dateSelect) {
     previousQuarterDt = prevQtrDateStr ? new Date(`${prevQtrDateStr} 00:00`) : null;
 }
 
-function setRegion($regionSelect) {
-    region = $regionSelect.val();
-}
-
-function setupRankingDates($dateSelect) {
+const setupRankingDates = $dateSelect => {
     let allRankingDts = [...mrdaRankings.mrdaRankingsHistory.keys()].sort((a, b) => a - b);
 
     let searchDt = mrdaRankings.getNextRankingPeriodDate(allRankingDts[0]);
@@ -88,25 +84,28 @@ function setupRankingDates($dateSelect) {
     });
 
     setRankingDates($dateSelect);
-    $dateSelect.on('change', function() { setRankingDates($dateSelect) } );
+    $dateSelect.on('change', () => { setRankingDates($dateSelect) } );
 }
 
-function setupRegion($regionSelect) {
+const setupRegion = $regionSelect => {
     if (urlParams.has('region') && $regionSelect.find(`option[value="${urlParams.get('region')}"]`).length > 0)
-        $regionSelect.val(urlParams.get('region'));
-    else if (false) { // Don't auto-select region, regional rankings unpopular with membership
-        // Automatically set European region with very rudimentary timezone math
-        var offset = new Date().getTimezoneOffset();
-        if ((-6*60) < offset && offset < (3*60))
-            $('#region').val('EUR');
-        else
-            $('#region').val('AM');
+        region = urlParams.get('region');
+    else if (false) { 
+        let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (timezone)
+        {
+            if (timezone.startsWith('America/'))
+                region = 'AM';
+            else if (timezone.startsWith('Europe/'))
+                region = 'EUR';
+        }
     }
-    setRegion($regionSelect);
-    $regionSelect.on('change', function() { setRegion($regionSelect) } );
+    if ($regionSelect.val() != region)
+        $regionSelect.val(region);
+    $regionSelect.on('change', () => { region = $regionSelect.val(); } );
 }
 
-function setupRankingChart(teams) {
+const setupRankingChart = teams => {
     let datasets = [];
 
     teams.slice(0, 5).forEach(team => {
@@ -143,14 +142,14 @@ function setupRankingChart(teams) {
             },
             plugins: {
                 tooltip: {
-                    itemSort: function(a, b) {
+                    itemSort: (a, b) => {
                         return b.raw.y - a.raw.y;
                     },
                     callbacks: {
-                        title: function(context) {
+                        title: context => {
                             return context[0].raw.x.toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'});
                         },
-                        label: function(context) {
+                        label: context => {
                             return `${context.dataset.label}: ${context.raw.y.toFixed(2)}`;
                         }
                     }
@@ -164,7 +163,7 @@ function setupRankingChart(teams) {
         },
     });
 
-    $('#rankings-table-container').on('change', 'input.chart', function (e) {
+    $('#rankings-table').on('change', 'input.chart', e => {
         let tr = e.target.closest('tr');
         let dt = $('#rankings-table').DataTable();
         let row = dt.row(tr);
@@ -183,7 +182,7 @@ function setupRankingChart(teams) {
     });
 }
 
-function setupRankingsTable(teams) {
+const setupRankingsTable = teams => {
 
     let annotations = document.createElement('div');
     annotations.className = 'annotations';
@@ -193,14 +192,15 @@ function setupRankingsTable(teams) {
     let exportOptions = { 
         columns: [0,3,4,5,6], 
         format: { 
-            header: function (data, columnIdx) { return ['Rank','Team','Ranking Points','Relative Standard Error','Game Count'][columnIdx]; } 
-        },        
+            header: (data, columnIdx) => { return ['Rank','Team','Ranking Points','Relative Standard Error','Game Count'][columnIdx]; } 
+        },
+        orthogonal: 'export'
     };
 
     new DataTable('#rankings-table', {
         columns: [
             { name: 'rank', data: 'rank', width: '1em', className: 'dt-center pe-1', 
-                render: function (data, type, team) { 
+                render: (data, type, team) => { 
                     if (type === 'sort')
                         return team.rankSort;
                     else if (region != 'GUR')
@@ -210,7 +210,7 @@ function setupRankingsTable(teams) {
                 }
             },
             { data: 'delta', width: '1em', className: 'no-wrap delta dt-center px-1',
-                render: function (data, type, team) {
+                render: (data, type, team) => {
                     let delta = region == 'GUR' ? team.delta : team.regionDelta;
                     if (type === 'display') {
                         if (!team.rank)
@@ -227,9 +227,9 @@ function setupRankingsTable(teams) {
                         return delta;
                 }
              },
-            { data: 'logo', width: '1em', orderable: false, className: 'px-1', render: function (data, type, team) { return data ? `<img class="team-logo" src="${data}">` : ''; } },            
+            { data: 'logo', width: '1em', orderable: false, className: 'px-1', render: (data, type, team) => { return data ? `<img class="team-logo" src="${data}">` : ''; } },            
             { data: 'name', orderable: false, className: 'px-1 text-overflow-ellipsis', 
-                render: function (data, type, team) {
+                render: (data, type, team) => {
                     let result = type == 'display' ? `<span class="team-name">${data}</span>` : data;
                     if (['display','export'].includes(type) && team.activeStatus) {
                         for (let i = 0; i < team.forfeits; i++) {
@@ -242,17 +242,17 @@ function setupRankingsTable(teams) {
                     }
                     return result;
                 },
-                createdCell: function (td, cellData, team, row, col) {
+                createdCell: (td, cellData, team, row, col) => {
                     if (team.location) 
                         $(td).append(`<div class="team-location">${team.location}</div>`);
                 }
             },
             { data: 'rankingPoints', width: '1em', className: 'px-1' },
-            { data: 'standardError', width: '1em', className: 'px-1 dt-left', render: function (data, type, team) { return type === 'display' ? `±${data}` : data; }},
-            { data: 'activeStatusGameCount', width: '1em', className: 'px-1', render: function (data, type, team) { return type === 'display' && !team.postseasonEligible ? `${data}<span class="postseason-ineligible">*</span>` : data; } },
+            { data: 'standardError', width: '1em', className: 'px-1 dt-left', render: (data, type, team) => { return type === 'display' ? `±${data}` : data; }},
+            { data: 'activeStatusGameCount', width: '1em', className: 'px-1', render: (data, type, team) => { return type === 'display' && !team.postseasonEligible ? `${data}<span class="postseason-ineligible">*</span>` : data; } },
             { data: 'wins', width: '1em', orderable: false, className: 'px-1 dt-center'},
             { data: 'losses', width: '1.6em', orderable: false, className: 'px-1 dt-left'},
-            { data: 'chart', width: '1em', className: 'ps-1 dt-center no-pointer', orderable: false, render: function (data, type, team) { return `<input type="checkbox" class="chart"${data ? ' checked' : ''}></input>`; }}
+            { data: 'chart', width: '1em', className: 'ps-1 dt-center no-pointer', orderable: false, render: (data, type, team) => { return `<input type="checkbox" class="chart"${data ? ' checked' : ''}></input>`; }}
         ],
         data: teams,
         layout: {
@@ -273,7 +273,7 @@ function setupRankingsTable(teams) {
                         text: '<i class="bi bi-filetype-csv"></i>',
                         exportOptions: exportOptions
                     } 
-                ] 
+                ]
             }
         },
         paging: false,
@@ -287,19 +287,22 @@ function setupRankingsTable(teams) {
             header: true,
             headerOffset: $('nav.sticky-top').outerHeight()
         },
-        createdRow: function (row, data, dataIndex) {
+        createdRow: (row, data, dataIndex) => {
+            $row = $(row);
+            $row.attr('data-bs-toggle', 'modal');
+            $row.attr('data-bs-target', '#team-modal');            
             if (data.postseasonPosition != null) {
-                $(row).addClass('postseason-position ' + data.postseasonPosition);
+                $row.addClass('postseason-position ' + data.postseasonPosition);
             }
         },
-        drawCallback: function (settings) {
+        drawCallback: settings => {
             $('#rankings-table .forfeit-penalty').tooltip({title: 'Two rank penalty applied for each forfeit.'});
             $('#rankings-table .postseason-ineligible').tooltip({title: 'Not enough games to be Postseason Eligible.'});
         }
     });
 }
 
-function handleRankingPeriodChange() {
+const handleRankingPeriodChange = () => {
     // Move the chart to new dates
     let rankingChart = Chart.getChart('rankings-chart');
     rankingChart.options.scales.x.min = rankingPeriodStartDt;
@@ -311,7 +314,7 @@ function handleRankingPeriodChange() {
     $('#rankings-table').DataTable().clear().rows.add(mrdaRankings.getOrderedTeams(region)).draw();
 }
 
-function handleRegionChange() {
+const handleRegionChange = () => {
     // Get ordered teams for region
     let teams = mrdaRankings.getOrderedTeams(region);
     
@@ -335,7 +338,7 @@ function handleRegionChange() {
     $('#rankings-table').DataTable().clear().rows.add(teams).draw();
 }
 
-$(function() {
+$(() => {
     //document.documentElement.setAttribute('data-bs-theme', (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
 
     let $dateSelect = $('#date');

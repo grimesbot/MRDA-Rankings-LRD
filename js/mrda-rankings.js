@@ -3,14 +3,17 @@ const REGIONS = ['EUR', 'AA', 'AM'];
 const ADHOC_POSTSEASON_CUTOFF = new Date(2026,7-1,31); // Special "Regular Season" end date for 2026 postseason by vote
 const ADHOC_POSTSEASON_START = new Date(2026,6-1,3); // Q2-2026 ranking deadline we're extending
 
-function getSeedDate(date, addWeek = false) {
+const getSeedDate = (date, addWeek = false) => {
+    if (addWeek) {
+        date = new Date(date);
+        date.setDate(date.getDate() + 7);
+    }
+
     if (new Date().getFullYear() == ADHOC_POSTSEASON_CUTOFF.getFullYear() && ADHOC_POSTSEASON_START < date && date < ADHOC_POSTSEASON_CUTOFF)
         return getSeedDate(ADHOC_POSTSEASON_START)
 
     let seedDate = new Date(date);
-    if (addWeek)
-        seedDate.setDate(seedDate.getDate() + 7);
-    seedDate.setDate(date.getDate() - 7 * 52);
+    seedDate.setDate(seedDate.getDate() - 7 * 52);
     // If seedDate is a greater # weekday of month than date, set seedDate back an additional week
     // e.g. if date is 1st Wednesday of June, seedDate should be 1st Wednesday of June last year.
     // date = Jun 7, 2028, 52 weeks prior would seedDate = Jun 9, 2027 which is 2nd Wednesday of June.

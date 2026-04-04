@@ -1,4 +1,4 @@
-function setTeamChartRankingHistory(team, teamChart, minDate = rankingPeriodStartDt) {
+const setTeamChartRankingHistory = (team, teamChart, minDate = rankingPeriodStartDt) => {
     let minRankingDt = [...team.rankingHistory.keys()].sort((a, b) => a - b)[0];
     if (minDate < minRankingDt) {
         minDate = new Date(minRankingDt);
@@ -73,7 +73,7 @@ function setTeamChartRankingHistory(team, teamChart, minDate = rankingPeriodStar
     teamChart.options.scales.x.max = rankingPeriodDeadlineDt;
 }
 
-function setTeameErrorChart(team, teamErrorChart) {
+const setTeameErrorChart = (team, teamErrorChart) => {
 
     teamErrorChart.data.datasets = [];
 
@@ -113,7 +113,7 @@ function setTeameErrorChart(team, teamErrorChart) {
 }
 
 // Setup team details modal
-$(function() {
+$(() => {
     let $teamDetailModal = $('#team-modal');
     let $olderGamesBtn = $('#load-older-games');
     let team = null;
@@ -155,7 +155,7 @@ $(function() {
                 tooltip: {
                     bodySpacing: 3,
                     callbacks: {
-                        title: function(context) {
+                        title: context => {
                             if (context[0].datasetIndex == 0)
                                 return [
                                     context[0].raw.game.getGameAndEventTitle(),
@@ -163,7 +163,7 @@ $(function() {
                                 ];                            
                             return context[0].raw.title;                                
                         },
-                        beforeBody: function(context) {
+                        beforeBody: context => {
                             if (context[0].datasetIndex == 0) {
                                 let game = context[0].raw.game;
                                 let result = [`Score Differential: ${game.getActualDifferentialDisplay(team)}`];
@@ -175,7 +175,7 @@ $(function() {
                                 return result;
                             }
                         },                        
-                        label: function(context) {
+                        label: context => {
                             if (context.datasetIndex == 0) {
                                 let result = context.raw.game.getPerformanceDeltaDisplay(team);
                                 if (result != null)
@@ -185,11 +185,11 @@ $(function() {
                             }                            
                             return context.raw.label;
                         },
-                        afterBody: function(context) {
+                        afterBody: context => {
                             if (context[0].datasetIndex == 1)
                                 return context[0].raw.stdErr;
                         },
-                        footer: function(context) {
+                        footer: context => {
                             if (context[0].datasetIndex == 0 && context[0].raw.game.weight < 1)
                                 return `Game Weight: ${(context[0].raw.game.weight * 100).toFixed(0)}%`;
                         }
@@ -209,7 +209,8 @@ $(function() {
                 x: {
                     stacked: true,
                     ticks: {
-                        callback: function(value) { 
+                        callback: function(value) {
+                            // Don't convert to arrow function syntax to preserve 'this' context
                             let label = this.getLabelForValue(value);
                             if (label == 'Virtual Game')
                                 return label;
@@ -220,7 +221,7 @@ $(function() {
                 y: {
                     stacked: true,
                     ticks: {
-                        callback: function(value) { 
+                        callback: value => { 
                             return `${value > 0 ? '+' : ''}${value}`;
                          }
                     },
@@ -249,7 +250,7 @@ $(function() {
                     position: 'nearest',
                     bodySpacing: 3,
                     callbacks: {
-                        title: function(context) {
+                        title: context => {
                             if (context[0].raw.game.awayTeamId == VIRTUAL_TEAM_ID)
                                 return [
                                     `${rankingPeriodStartDt.toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'})}: ${context[0].label}`,
@@ -260,7 +261,7 @@ $(function() {
                                 context[0].raw.game.getGameSummary(team.teamId)
                             ];
                         },
-                        beforeBody: function(context) {
+                        beforeBody: context => {
                             let game = context[0].raw.game;
                             let opponent = game.getOpponentTeam(team.teamId);
                             let expectedDiff = context[0].raw.expectedDiff;
@@ -271,10 +272,10 @@ $(function() {
                                 `Score Differential: ${actualDiff}`,
                             ];
                         },
-                        label: function(context) {
+                        label: context => {
                             return ` Error: ${context.formattedValue > 0 ? '+' : ''}${context.formattedValue}`;
                         },
-                        footer: function(context) {
+                        footer: context => {
                             return `Game Weight: ${(context[0].raw.game.weight * 100).toFixed(0)}%`;
                         }
                     }
@@ -288,15 +289,15 @@ $(function() {
     // Initialize the team game history DataTable. Data will be set on team row click.
     let teamGameTable = new DataTable('#team-games-table', {
         columns: [
-            { width: '1em', className: 'dt-center', name: 'date', data: 'date', render: function (data, type, game) { return type === 'display' ? `<div data-toggle="tooltip" title="${data.toLocaleTimeString(undefined,{timeStyle:'short'})}">${data.toLocaleDateString(undefined,{weekday:'short'})}</div>` : data }},
-            { width: '1em', className: 'dt-center narrow', render: function (data, type, game) { return game.getWL(team.teamId) }},
-            { width: '1em', className: 'dt-center narrow', render: function (data, type, game) { return game.getAtVs(team.teamId) }},
-            { width: '1em', className: 'px-1', render: function(data, type, game) {return `<img class="opponent-logo" src="${game.getOpponentTeam(team.teamId).logo}">`; } },
-            { className: 'ps-1 text-overflow-ellipsis', render: function (data, type, game) { return game.getOpponentTeam(team.teamId).getNameWithRank(game.date, region); } },
-            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, game) { return game.getTeamsScore(team.teamId) }},
-            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, game) { return game.getActualDifferentialDisplayWithTooltip(team); } },
-            { width: '1em', className: 'dt-center no-wrap', render: function (data, type, game) { return game.getPredictedDifferentialWithTooltip(team); } },
-            { width: '1em', className: 'dt-center no-wrap', data: 'weight', render: function(data, type, game) { return game.getPerformanceDeltaWithIcon(team); } }
+            { width: '1em', className: 'dt-center', name: 'date', data: 'date', render: (data, type, game) => { return type === 'display' ? `<div data-toggle="tooltip" title="${data.toLocaleTimeString(undefined,{timeStyle:'short'})}">${data.toLocaleDateString(undefined,{weekday:'short'})}</div>` : data }},
+            { width: '1em', className: 'dt-center narrow', render: (data, type, game) => { return game.getWL(team.teamId) }},
+            { width: '1em', className: 'dt-center narrow', render: (data, type, game) => { return game.getAtVs(team.teamId) }},
+            { width: '1em', className: 'px-1', render: (data, type, game) => {return `<img class="opponent-logo" src="${game.getOpponentTeam(team.teamId).logo}">`; } },
+            { className: 'ps-1 text-overflow-ellipsis', render: (data, type, game) => { return game.getOpponentTeam(team.teamId).getNameWithRank(game.date, region); } },
+            { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getTeamsScore(team.teamId) }},
+            { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getActualDifferentialDisplayWithTooltip(team); } },
+            { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getPredictedDifferentialWithTooltip(team); } },
+            { width: '1em', className: 'dt-center no-wrap', data: 'weight', render: (data, type, game) => { return game.getPerformanceDeltaWithIcon(team); } }
         ],
         data: [],
         paging: false,
@@ -310,7 +311,7 @@ $(function() {
         },
         rowGroup: {
             dataSrc: ['event'],
-            startRender: function (rows, group) {
+            startRender: (rows, group) => {
                 let tr = document.createElement('tr');
                 let th = document.createElement('th');
 
@@ -365,19 +366,13 @@ $(function() {
             handler: false,
             indicators: false
         },
-    }).on('draw', function() {
+    }).on('draw', () => {
         $('#team-games-table [data-toggle="tooltip"]').tooltip();
     });
 
-    $('#rankings-table').on('click', 'td:not(.no-pointer)', function (e) {
-        let tr = e.target.closest('tr');
-        let row = $('#rankings-table').DataTable().row(tr);
-        let clickedTeam = row.data();
-
-        if (clickedTeam == team && rankingPeriodDeadlineDt == date) {
-            $teamDetailModal.modal('show');
-            return; 
-        }
+    const setTeam = clickedTeam => {
+        if (clickedTeam == team && rankingPeriodDeadlineDt == date)
+            return;
 
         team = clickedTeam;
         date = rankingPeriodDeadlineDt;
@@ -408,11 +403,9 @@ $(function() {
             $olderGamesBtn.show();
         else
             $olderGamesBtn.hide();
-        
-        $teamDetailModal.modal('show');
-    });
+    };
 
-    $olderGamesBtn.on('click', function (e) {
+    $olderGamesBtn.on('click', e => {
         let newMinDt = getSeedDate(minGameDt);
         teamGameTable.rows.add(team.gameHistory.filter(game => newMinDt <= game.date && game.date < minGameDt)).draw();
         setTeamChartRankingHistory(team, teamChart, newMinDt);
@@ -424,7 +417,47 @@ $(function() {
             $olderGamesBtn.hide();
     });
 
-    $('#region').on('change', function() {
+    $teamDetailModal.on('show.bs.modal', e => {
+        let clicked = e.relatedTarget;
+        if (clicked.hasAttribute('data-team-id')) {
+            let $clicked = $(clicked);
+            let teamId = $clicked.data('team-id');
+            if (teamId) {
+                setTeam(mrdaRankings.mrdaTeams[teamId]);
+                return;
+            } else
+                return false;
+        }
+
+        let tr = clicked.closest('tr');
+        let dt = $(clicked.closest('table')).DataTable();
+        let row = dt.row(tr);
+        let data = row.data();
+        
+        if (data instanceof MrdaTeam)
+            setTeam(data);
+        else if (data instanceof MrdaGame) {
+            let $clicked = $(clicked);
+            let teamDetail = $clicked.data('team-detail');
+            if (teamDetail == 'opponent')
+                setTeam(data.getOpponentTeam(data.teamId));
+            else if (teamDetail == 'home')
+                setTeam(data.homeTeam);
+            else if (teamDetail == 'away')
+                setTeam(data.awayTeam);
+            else
+                return false;
+        }
+    });
+
+    $('#team-games-table').on('click', '.team-name,.opponent-logo', e => {
+        let tr = e.target.closest('tr');
+        let row = teamGameTable.row(tr);
+        let game = row.data();
+        setTeam(game.getOpponentTeam(team.teamId));
+    });
+
+    $('#region').on('change', () => {
         // Re-read team games table data with regional ranks
         $('#team-games-table').DataTable().rows().invalidate('data').draw();
     });
