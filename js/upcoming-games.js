@@ -6,11 +6,11 @@ $(() => {
         columns: [
             { data: 'event.startDt', visible: false },
             { data: 'date', visible: false },
-            { data: 'homeTeam.name', width: '30em', className: 'dt-right', render: (data, type, game) => {return `<span class="team-name">${data}</span><div class="team-rp">${game.homeTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`; } },
-            { data: 'homeTeam.logo', width: '1em', render: (data, type, game) => {return `<img class="team-logo" class="ms-2" src="${data}">`; } },
+            { name: 'homeName', width: '30em', className: 'dt-right', render: (data, type, game) => { return `${game.homeTeam.getNameDisplay()}${game.homeTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
+            { name: 'homeLogo', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(false, 'ms-2'); } },
             { data: 'getPredictedDifferentialDisplay()', width: '1em', className: 'dt-center' },
-            { data: 'awayTeam.logo', width: '1em', render: (data, type, game) => {return `<img class="team-logo" class="ms-2" src="${data}">`; } },                
-            { data: 'awayTeam.name', width: '30em', render: (data, type, game) => {return `<span class="team-name">${data}</span><div class="team-rp">${game.awayTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`; }  },
+            { name: 'awayLogo', width: '1em', render: (data, type, game) => { return game.awayTeam.getLogoDisplay(false, 'ms-2'); } },                
+            { name: 'awayName', width: '30em', render: (data, type, game) => { return `${game.awayTeam.getNameDisplay()}${game.awayTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
         ],
         data: gamesWithoutScores,
         rowGroup: {

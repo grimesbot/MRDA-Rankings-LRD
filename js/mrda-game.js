@@ -198,6 +198,10 @@ class MrdaGame {
         return this.getPredictorRankingPoints(team) + performanceDelta;
     }
 
+    getPerformanceDeltasDisplay() {
+        return `<div class="performance-deltas">${this.getPerformanceDeltaWithIcon(this.homeTeam,1)}&nbsp;&nbsp;${this.getPerformanceDeltaWithIcon(this.awayTeam,1)}</div>`;
+    }    
+
     getTeamsScore(teamId) {
         return `${this.scores[teamId]}-${this.scores[this.getOpponentTeamId(teamId)]}`;
     }

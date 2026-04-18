@@ -292,8 +292,8 @@ $(() => {
             { width: '1em', className: 'dt-center', name: 'date', data: 'date', render: (data, type, game) => { return type === 'display' ? `<div data-toggle="tooltip" title="${data.toLocaleTimeString(undefined,{timeStyle:'short'})}">${data.toLocaleDateString(undefined,{weekday:'short'})}</div>` : data }},
             { width: '1em', className: 'dt-center narrow', render: (data, type, game) => { return game.getWL(team.teamId) }},
             { width: '1em', className: 'dt-center narrow', render: (data, type, game) => { return game.getAtVs(team.teamId) }},
-            { width: '1em', className: 'px-1', render: (data, type, game) => {return `<img class="opponent-logo" src="${game.getOpponentTeam(team.teamId).logo}">`; } },
-            { className: 'ps-1 text-overflow-ellipsis', render: (data, type, game) => { return game.getOpponentTeam(team.teamId).getNameWithRank(game.date, region); } },
+            { width: '1em', className: 'px-1 opponent', render: (data, type, game) => { return game.getOpponentTeam(team.teamId).getLogoDisplay(true); } },
+            { className: 'ps-1 opponent text-overflow-ellipsis', render: (data, type, game) => { return game.getOpponentTeam(team.teamId).getNameWithRank(game.date, region, true); } },
             { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getTeamsScore(team.teamId) }},
             { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getActualDifferentialDisplayWithTooltip(team); } },
             { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getPredictedDifferentialWithTooltip(team); } },
@@ -428,33 +428,17 @@ $(() => {
             } else
                 return false;
         }
-
-        let tr = clicked.closest('tr');
-        let dt = $(clicked.closest('table')).DataTable();
-        let row = dt.row(tr);
-        let data = row.data();
-        
-        if (data instanceof MrdaTeam)
-            setTeam(data);
-        else if (data instanceof MrdaGame) {
-            let $clicked = $(clicked);
-            let teamDetail = $clicked.data('team-detail');
-            if (teamDetail == 'opponent')
-                setTeam(data.getOpponentTeam(data.teamId));
-            else if (teamDetail == 'home')
-                setTeam(data.homeTeam);
-            else if (teamDetail == 'away')
-                setTeam(data.awayTeam);
-            else
-                return false;
-        }
     });
 
-    $('#team-games-table').on('click', '.team-name,.opponent-logo', e => {
-        let tr = e.target.closest('tr');
-        let row = teamGameTable.row(tr);
-        let game = row.data();
-        setTeam(game.getOpponentTeam(team.teamId));
+    let clickedA = null;
+    $('#team-games-table').on('click', 'a[data-bs-toggle="modal"]', e => { 
+        clickedA = e.currentTarget; 
+    });
+    $teamDetailModal.on('hidden.bs.modal', e => {
+        if (clickedA != null) {
+            clickedA.click();
+            clickedA = null;
+        }
     });
 
     $('#region').on('change', () => {

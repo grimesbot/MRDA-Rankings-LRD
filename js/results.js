@@ -6,61 +6,34 @@ $(() => {
             { data: 'event.startDt', visible: false },
             { data: 'eventId', visible: false },
             { data: 'date', visible: false },
-            { data: 'homeTeam.name', className: 'dt-right home', 
+            { name: 'homeName', className: 'dt-right home', 
                 render: (data, type, game) => { 
-                    let result = game.homeTeam.getNameWithRank(game.date, region);
+                    let result = game.homeTeam.getNameWithRank(game.date, region, true);
                     if (game.forfeit && game.forfeitTeamId == game.homeTeamId)
                         result += '<sup class="forfeit-info">↓</sup>';
-                    let rankingPoints = game.awayTeamId == VIRTUAL_TEAM_ID ? game.homeTeam.getRankingPoints(game.date) : game.homeTeam.getPredictorRankingPoints(game.date);
-                    result += `<div class="team-rp">${rankingPoints ?? '&nbsp;'}</div>`;
+                    result += game.awayTeamId == VIRTUAL_TEAM_ID ? game.homeTeam.getRankingPointsDisplay(game.date) : game.homeTeam.getPredictorRankingPointsDisplay(game.date);
                     return result;
-                },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamName = $(cell).find('.team-name');
-                    $teamName.attr('data-bs-toggle', 'modal');
-                    $teamName.attr('data-bs-target', '#team-modal');
-                    $teamName.data('team-detail', 'home');                    
                 }
             },
-            { data: 'homeTeam.logo', width: '1em', 
-                render: (data, type, game) => { return `<img class="ms-2 home team-logo" src="${data}">`; },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamLogo = $(cell).find('.team-logo');
-                    $teamLogo.attr('data-bs-toggle', 'modal');
-                    $teamLogo.attr('data-bs-target', '#team-modal');
-                    $teamLogo.data('team-detail', 'home');                    
-                }
-            },
-            { name: 'score', width: '7em', className: 'dt-center no-wrap', render: (data, type, game) => {
-                let result = `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}`;
-                if (game.status < 6)
-                    result += '<sup class="unvalidated-info">†</sup>';
-                result += `<div class="performance-deltas">${game.getPerformanceDeltaWithIcon(game.homeTeam,1)}&nbsp;&nbsp;${game.getPerformanceDeltaWithIcon(game.awayTeam,1)}</div>`;
-                return result;
-            } },
-            { data: 'awayTeam.logo', width: '1em', 
-                render: (data, type, game) => { return `<img class="ms-2 away team-logo" src="${data}">`; }, 
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamLogo = $(cell).find('.team-logo');
-                    $teamLogo.attr('data-bs-toggle', 'modal');
-                    $teamLogo.attr('data-bs-target', '#team-modal');
-                    $teamLogo.data('team-detail', 'away');                    
-                }
-            },
-            { data: 'awayTeam.name', className: 'away', 
+            { name: 'homeLogo', className: 'home', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(true, 'ms-2'); } },
+            { name: 'score', width: '7em', className: 'dt-center no-wrap', 
                 render: (data, type, game) => {
-                    let result = game.awayTeam.getNameWithRank(game.date, region);
+                    let result = `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}`;
+                    if (game.status < 6)
+                        result += '<sup class="unvalidated-info">†</sup>';
+                    result += game.getPerformanceDeltasDisplay();
+                    return result;
+                } 
+            },
+            { name: 'awayLogo', className: 'away', width: '1em', render: (data, type, game) => { return game.awayTeam.getLogoDisplay(true, 'ms-2');} },
+            { name: 'awayName', className: 'away', 
+                render: (data, type, game) => {
+                    let result = game.awayTeam.getNameWithRank(game.date, region, true);
                     if (game.forfeit && game.forfeitTeamId == game.awayTeamId)
                         result += '<sup class="forfeit-info">↓</sup>';
-                    result += `<div class="team-rp">${game.awayTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`;
+                    result += game.awayTeam.getPredictorRankingPointsDisplay(game.date);
                     return result; 
-                },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamName = $(cell).find('.team-name');
-                    $teamName.attr('data-bs-toggle', 'modal');
-                    $teamName.attr('data-bs-target', '#team-modal');
-                    $teamName.data('team-detail', 'away');                    
-                } 
+                }
             },
             { data: 'weight', width: '1em', render: (data, type, game) => { return data ? `${(data * 100).toFixed(0)}%` : ''; } }
         ],
@@ -108,6 +81,7 @@ $(() => {
         }
         resultsTable.clear().rows.add(games).draw();
     });
+    
     $('#results-modal').on('hidden.bs.modal', () => {
         $rankingPeriodLabel.text('');        
         resultsTable.clear().draw();

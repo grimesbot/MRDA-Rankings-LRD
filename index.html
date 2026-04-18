@@ -19,10 +19,10 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.min.css">
 
-        <link rel="stylesheet" href="https://cdn.datatables.net/2.3.5/css/dataTables.bootstrap5.min.css" />
-        <link rel="stylesheet" href="https://cdn.datatables.net/buttons/3.2.5/css/buttons.bootstrap5.min.css" />        
-        <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/4.0.5/css/fixedHeader.bootstrap5.min.css" />
-        <link rel="stylesheet" href="https://cdn.datatables.net/rowgroup/1.6.0/css/rowGroup.bootstrap5.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5/css/dataTables.bootstrap5.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-buttons-bs5/css/buttons.bootstrap5.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-fixedheader-bs5/css/fixedHeader.bootstrap5.min.css" />
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-rowgroup-bs5/css/rowGroup.bootstrap5.min.css" />
 
         <link rel="stylesheet" href="styles.css" />
     </head>
@@ -120,7 +120,7 @@
                         <th data-toggle="tooltip" data-bs-html="true" title="Sanctioned Games Played in the Ranking Period for compliance:<br>3+ to be Ranked<br>5+ to be Postseason Eligible">GP</th>
                         <th data-toggle="tooltip" title="Wins">W</th>
                         <th data-toggle="tooltip" title="Losses">L</th>
-                        <th data-toggle="tooltip" title="Display team's Ranking Point history in line chart above."><i class="bi bi-graph-up"></i></th>
+                        <th data-toggle="tooltip" data-bs-html="true" title="Display team's Ranking Point history in line chart above.<br><br>Click <i class='bi bi-graph-up'></i> to clear chart or reset to top 5 teams."><i class="bi bi-graph-up"></i></th>
                     </tr>
                 </thead>
             </table>      
@@ -369,6 +369,18 @@
                     <div class="modal-body">
                         <div class="table-responsive">
                             <table id="upsets-table" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th class="dt-right">Home Team<div class="team-rp">Current RP</div></th>
+                                        <th></th>
+                                        <th class="dt-center">Score</th>
+                                        <th></th>
+                                        <th>Away Team<div class="team-rp">Current RP</div></th>
+                                        <th>Rank Δ</th>
+                                        <th>RP Δ</th>
+                                    </tr>
+                                </thead>
                             </table>
                         </div>
                     </div>
@@ -389,6 +401,19 @@
                     <div class="modal-body">
                         <div class="table-responsive">
                             <table id="new-games-table" class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th class="dt-right">Home Team<div class="team-rp">RP as of Game</div></th>
+                                        <th></th>
+                                        <th class="dt-center">Score<div class="performance-deltas">Prediction Δ</div></th>
+                                        <th></th>
+                                        <th>Away Team<div class="team-rp">RP as of Game</div></th>
+                                        <th>Event</th>
+                                    </tr>
+                                </thead>
                             </table>
                         </div>
                     </div>
@@ -413,17 +438,17 @@
             </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/moment"></script>
 
-        <script src="https://cdn.datatables.net/2.3.5/js/dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/2.3.5/js/dataTables.bootstrap5.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/3.2.5/js/dataTables.buttons.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.bootstrap5.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/3.2.5/js/buttons.html5.min.js"></script>        
-        <script src="https://cdn.datatables.net/fixedheader/4.0.5/js/dataTables.fixedHeader.min.js"></script>
-        <script src="https://cdn.datatables.net/rowgroup/1.6.0/js/dataTables.rowGroup.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net/js/dataTables.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons-bs5/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net-buttons/js/buttons.html5.min.js"></script>        
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net-fixedheader/js/dataTables.fixedHeader.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/datatables.net-rowgroup/js/dataTables.rowGroup.min.js"></script>
 
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment"></script>

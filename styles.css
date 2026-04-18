@@ -122,8 +122,12 @@ th.narrow {
     vertical-align: text-top;
 }
 
-.team-logo {
+img.team-logo {
     height: 2.5em;
+}
+
+td.team-logo {
+    width: 2.5em;
 }
 
 .team-name {
@@ -163,34 +167,25 @@ td.delta i.down,
 
 #rankings-table td:not(.no-pointer),
 #upcoming-games-table tr:not(.dtrg-group),
-#upsets-table td,
-#team-games-table .opponent-logo,
-#results-table .team-logo,
-#matchup-history-table .team-logo,
-#new-games-table .team-logo {
+#upsets-table td {
     cursor: pointer;
+}
+
+a.team-name {
+    text-decoration: none;
+    color: var(--bs-body-color);
 }
 
 #rankings-table tbody tr:hover .team-name,
 #upcoming-games-table tbody tr:hover .team-name,
-#upsets-table tbody tr:hover .team-name,
-#team-games-table tr:has(.opponent-logo:hover) .team-name,
-#results-table tr:has(.home.team-logo:hover) .home .team-name,
-#results-table tr:has(.away.team-logo:hover) .away .team-name,
-#matchup-history-table tr:has(.home.team-logo:hover) .home .team-name,
-#matchup-history-table tr:has(.away.team-logo:hover) .away .team-name,
-#new-games-table tr:has(.home.team-logo:hover) .home .team-name,
-#new-games-table tr:has(.away.team-logo:hover) .away .team-name {
+#upsets-table tbody tr:hover .team-name, 
+a.team-name:hover,
+tr:has(.home a .team-logo:hover) .home a.team-name,
+tr:has(.away a .team-logo:hover) .away a.team-name,
+tr:has(.opponent a .team-logo:hover) .opponent a.team-name {
     text-decoration: underline;
 }
 
-#team-games-table .team-name:hover,
-#results-table .team-name:hover,
-#new-games-table .team-name:hover,
-#matchup-history-table .team-name:hover{
-    cursor: pointer;
-    text-decoration: underline;
-}
 
 .annotations {
     font-size: .85em;

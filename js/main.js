@@ -90,7 +90,7 @@ const setupRankingDates = $dateSelect => {
 const setupRegion = $regionSelect => {
     if (urlParams.has('region') && $regionSelect.find(`option[value="${urlParams.get('region')}"]`).length > 0)
         region = urlParams.get('region');
-    else if (false) { 
+    else { 
         let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         if (timezone)
         {
@@ -168,7 +168,7 @@ const setupRankingChart = teams => {
         let dt = $('#rankings-table').DataTable();
         let row = dt.row(tr);
         let team = row.data();
-        team.chart = $(this).prop('checked');
+        team.chart = e.target.checked;
         if (team.chart) {
             rankingChart.data.datasets.push({
                 teamId: team.teamId,
@@ -179,6 +179,34 @@ const setupRankingChart = teams => {
         } else 
             rankingChart.data.datasets = rankingChart.data.datasets.filter(dataset => dataset.teamId != team.teamId);
         rankingChart.update();
+    });
+    
+    $('#rankings-table').on('click', 'th i.bi-graph-up', e => {
+        let dt = $('#rankings-table').DataTable();
+        let teams = dt.rows().data().toArray().sort((a, b) => a.rankSort - b.rankSort);
+        let charted = teams.filter(team => team.chart);
+        let topFive = teams.slice(0, 5);
+
+        teams.forEach(team => team.chart = false);
+
+        if (charted.length !== topFive.length || !charted.every(team => topFive.includes(team))) {            
+            rankingChart.data.datasets = rankingChart.data.datasets.filter(ds => topFive.some(team => ds.teamId == team.teamId));
+            
+            topFive.forEach(team => {
+                team.chart = true;
+                if (!rankingChart.data.datasets.some(ds => ds.teamId == team.teamId))
+                    rankingChart.data.datasets.push({
+                        teamId: team.teamId,
+                        label: team.name,
+                        data: Array.from(team.rankingHistory, ([date, ranking]) => ({ x: date, y: ranking.rankingPoints})),
+                        showLine: true
+                    });
+            });
+        } else
+            rankingChart.data.datasets = [];
+        
+        rankingChart.update();
+        dt.rows().invalidate('data').draw();
     });
 }
 
@@ -201,6 +229,8 @@ const setupRankingsTable = teams => {
         columns: [
             { name: 'rank', data: 'rank', width: '1em', className: 'dt-center pe-1', 
                 render: (data, type, team) => { 
+                    if (type === 'export' && data == null)
+                        return 'NR';
                     if (type === 'sort')
                         return team.rankSort;
                     else if (region != 'GUR')
@@ -209,7 +239,7 @@ const setupRankingsTable = teams => {
                         return data;
                 }
             },
-            { data: 'delta', width: '1em', className: 'no-wrap delta dt-center px-1',
+            { name: 'delta', width: '1em', className: 'no-wrap delta dt-center px-1',
                 render: (data, type, team) => {
                     let delta = region == 'GUR' ? team.delta : team.regionDelta;
                     if (type === 'display') {
@@ -227,10 +257,10 @@ const setupRankingsTable = teams => {
                         return delta;
                 }
              },
-            { data: 'logo', width: '1em', orderable: false, className: 'px-1', render: (data, type, team) => { return data ? `<img class="team-logo" src="${data}">` : ''; } },            
+            { data: 'getLogoDisplay', width: '1em', orderable: false, className: 'team-logo px-1' },
             { data: 'name', orderable: false, className: 'px-1 text-overflow-ellipsis', 
                 render: (data, type, team) => {
-                    let result = type == 'display' ? `<span class="team-name">${data}</span>` : data;
+                    let result = type == 'display' ? team.getNameDisplay(true) : data;
                     if (['display','export'].includes(type) && team.activeStatus) {
                         for (let i = 0; i < team.forfeits; i++) {
                             if (type === 'display')
@@ -238,13 +268,10 @@ const setupRankingsTable = teams => {
                             else if (type === 'export')
                                 result += ' ↓';
                         }
-                        return result;
                     }
+                    if (type === 'display' && team.location)
+                        result += `<div class="team-location">${team.location}</div>`;
                     return result;
-                },
-                createdCell: (td, cellData, team, row, col) => {
-                    if (team.location) 
-                        $(td).append(`<div class="team-location">${team.location}</div>`);
                 }
             },
             { data: 'rankingPoints', width: '1em', className: 'px-1' },
@@ -288,17 +315,19 @@ const setupRankingsTable = teams => {
             headerOffset: $('nav.sticky-top').outerHeight()
         },
         createdRow: (row, data, dataIndex) => {
-            $row = $(row);
-            $row.attr('data-bs-toggle', 'modal');
-            $row.attr('data-bs-target', '#team-modal');            
             if (data.postseasonPosition != null) {
-                $row.addClass('postseason-position ' + data.postseasonPosition);
+                $(row).addClass('postseason-position ' + data.postseasonPosition);
             }
         },
         drawCallback: settings => {
             $('#rankings-table .forfeit-penalty').tooltip({title: 'Two rank penalty applied for each forfeit.'});
             $('#rankings-table .postseason-ineligible').tooltip({title: 'Not enough games to be Postseason Eligible.'});
         }
+    });
+
+    $('#rankings-table').on('click', 'td:not(.no-pointer)', e => {
+        if (e.target.nodeName !== 'A') 
+            e.target.closest('tr').querySelector('a[data-bs-toggle="modal"]').click();
     });
 }
 

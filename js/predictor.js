@@ -132,6 +132,8 @@ $(() => {
 
     let $date = $('#predictor-date');
     let $teamSelects = $('#predictor-home,#predictor-away');
+    let $homeTeamSelect = $teamSelects.filter('#predictor-home');
+    let $awayTeamSelect = $teamSelects.filter('#predictor-away');
 
     $date[0].valueAsDate = new Date();
 
@@ -210,57 +212,30 @@ $(() => {
     let matchupHistoryTable = new DataTable('#matchup-history-table', {
         columns: [
             { data: 'date', visible: false },
-            { data: 'homeTeam.name', className: 'dt-right home', 
+            { name: 'homeName', className: 'dt-right home', 
                 render: (data, type, game) => { 
-                    let result = game.homeTeam.getNameWithRank(game.date, region);
+                    let result = game.homeTeam.getNameWithRank(game.date, region, true);
                     if (game.forfeit && game.forfeitTeamId == game.homeTeamId)
                         result += '<sup class="forfeit-info">↓</sup>';
-                    let rankingPoints = game.awayTeamId == VIRTUAL_TEAM_ID ? game.homeTeam.getRankingPoints(game.date) : game.homeTeam.getPredictorRankingPoints(game.date);
-                    result += `<div class="team-rp">${rankingPoints ?? '&nbsp;'}</div>`;
+                    result += game.homeTeam.getPredictorRankingPointsDisplay(game.date);
                     return result;
-                },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamName = $(cell).find('.team-name');
-                    $teamName.attr('data-bs-toggle', 'modal');
-                    $teamName.attr('data-bs-target', '#team-modal');
-                    $teamName.data('team-detail', 'home');                    
                 }
             },
-            { data: 'homeTeam.logo', width: '1em', 
-                render: (data, type, game) => { return `<img class="ms-2 team-logo home" src="${data}">`; },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamLogo = $(cell).find('.team-logo');
-                    $teamLogo.attr('data-bs-toggle', 'modal');
-                    $teamLogo.attr('data-bs-target', '#team-modal');
-                    $teamLogo.data('team-detail', 'home');                    
+            { name: 'homeLogo', className: 'home', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(true, 'ms-2'); } },
+            { name: 'score', width: '7em', className: 'no-wrap dt-center', 
+                render: (data, type, game) => {
+                    return `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}${game.getPerformanceDeltasDisplay()}`;
                 } 
             },
-            { name: 'score', width: '7em', className: 'no-wrap dt-center', render: (data, type, game) => {
-                return `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}<div class="performance-deltas">${game.getPerformanceDeltaWithIcon(game.homeTeam,1)}&nbsp;&nbsp;${game.getPerformanceDeltaWithIcon(game.awayTeam,1)}</div>`;
-            } },
-            { data: 'awayTeam.logo', width: '1em', 
-                render: (data, type, game) => { return `<img class="ms-2 team-logo away" src="${data}">`; },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamLogo = $(cell).find('.team-logo');
-                    $teamLogo.attr('data-bs-toggle', 'modal');
-                    $teamLogo.attr('data-bs-target', '#team-modal');
-                    $teamLogo.data('team-detail', 'away');                    
-                }
-            },
-            { data: 'awayTeam.name', className: 'away', 
+            { name: 'awayLogo', className: 'away', width: '1em', render: (data, type, game) => { return game.awayTeam.getLogoDisplay(true, 'ms-2');} },
+            { name: 'awayName', className: 'away', 
                 render: (data, type, game) => {
-                    let result = game.awayTeam.getNameWithRank(game.date, region);
+                    let result = game.awayTeam.getNameWithRank(game.date, region, true);
                     if (game.forfeit && game.forfeitTeamId == game.awayTeamId)
                         result += '<sup class="forfeit-info">↓</sup>';
-                    result += `<div class="team-rp">${game.awayTeam.getPredictorRankingPoints(game.date) ?? '&nbsp;'}</div>`;
+                    result += game.awayTeam.getPredictorRankingPointsDisplay(game.date);
                     return result; 
-                },
-                createdCell: ( cell, cellData, rowData, rowIndex, colIndex ) => {
-                    let $teamName = $(cell).find('.team-name');
-                    $teamName.attr('data-bs-toggle', 'modal');
-                    $teamName.attr('data-bs-target', '#team-modal');
-                    $teamName.data('team-detail', 'away');                    
-                } 
+                }
             }
         ],
         data: [],
@@ -292,6 +267,13 @@ $(() => {
         }
     });
 
+    $teamSelects.change(() => { 
+        predictGame(predictorChart, $loadingOverlay);
+        populateMatchupHistory(matchupHistoryTable);
+    });
+
+    $date.change(() => { predictGame(predictorChart, $loadingOverlay); });
+
     $('#predictor-modal').on('show.bs.modal', e => {
         let clicked = e.relatedTarget;
         let tr = clicked.closest('tr');
@@ -301,20 +283,31 @@ $(() => {
         let data = row.data();
 
         if (data instanceof MrdaGame) {
-            $teamSelects.filter('#predictor-home').val(data.homeTeamId);
-            $teamSelects.filter('#predictor-away').val(data.awayTeamId);
-            $date[0].valueAsDate = data.date;
-            predictGame(predictorChart, $loadingOverlay); 
-            populateMatchupHistory(matchupHistoryTable);
+            let teamsChanged = false;
+            if ($homeTeamSelect.val() != data.homeTeamId) {
+                $homeTeamSelect.val(data.homeTeamId);
+                teamsChanged = true;
+            }
+            if ($awayTeamSelect.val() != data.awayTeamId) {
+                $awayTeamSelect.val(data.awayTeamId);
+                teamsChanged = true; 
+            }
+
+            let dateChanged = false;
+            let dateStr = `${data.date.getFullYear()}-${String(data.date.getMonth() + 1).padStart(2, '0')}-${String(data.date.getDate()).padStart(2, '0')}`;
+            if ($date.val() != dateStr) {
+                $date.val(dateStr);
+                dateChanged = true;
+            }
+
+            if (teamsChanged) {
+                predictGame(predictorChart, $loadingOverlay);
+                populateMatchupHistory(matchupHistoryTable);
+            } else if (dateChanged) {
+                predictGame(predictorChart, $loadingOverlay);
+            }
         }
-    });    
-
-    $teamSelects.change(() => { 
-        predictGame(predictorChart, $loadingOverlay);
-        populateMatchupHistory(matchupHistoryTable);        
     });
-
-    $date.change(() => { predictGame(predictorChart, $loadingOverlay); });
 
     $('#region').on('change', () => {
         // Re-read team matchup history table table data with regional ranks

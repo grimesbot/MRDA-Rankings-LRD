@@ -142,7 +142,19 @@ for api_game in sorted_game_data:
     # Event
     if mrda_game.event_id is not None:
         if mrda_game.event_id not in mrda_events:
-            mrda_events[mrda_game.event_id] = MrdaEvent(api_game.get("sanctioning", {}).get("event_name", None), mrda_game.datetime)
+            event_name = api_game.get("sanctioning", {}).get("event_name", None)
+            
+            # Check for event with same name within the last week. Sometimes duplicate 
+            # sanctioning requests are submitted for last minute changes (cough MBD cough ;)
+            if event_name is not None:
+                same_name_event_id = next((event_id for event_id, event in mrda_events.items() if event.name == event_name and event.start_dt > (mrda_game.datetime - timedelta(weeks=1))), None)
+                if same_name_event_id is not None:
+                     mrda_game.event_id = same_name_event_id
+                     mrda_events[same_name_event_id].end_dt = mrda_game.datetime
+                else:
+                    mrda_events[mrda_game.event_id] = MrdaEvent(event_name, mrda_game.datetime)
+            else:
+                mrda_events[mrda_game.event_id] = MrdaEvent(event_name, mrda_game.datetime)
         elif mrda_game.datetime > mrda_events[mrda_game.event_id].end_dt:
             mrda_events[mrda_game.event_id].end_dt = mrda_game.datetime
 

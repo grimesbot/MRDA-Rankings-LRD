@@ -78,8 +78,24 @@ class MrdaTeam {
             return null;
     }
 
-    getNameWithRank(date, region) {
-        let result = `<span class="team-name">${this.name}</span>`;
+    getLogoDisplay(teamDetailLink = false, className = '') {
+        if (!this.logo)
+            return '';
+        let result = `<img class="team-logo ${className}" src="${this.logo}" alt="${this.name} logo">`;
+        if (teamDetailLink)
+            result = `<a href="#" data-bs-toggle="modal" data-bs-target="#team-modal" data-team-id="${this.teamId}">${result}</a>`;
+        return result;
+    }
+
+    getNameDisplay(teamDetailLink = false) {
+        if (teamDetailLink)
+            return `<a class="team-name" href="#" data-bs-toggle="modal" data-bs-target="#team-modal" data-team-id="${this.teamId}">${this.name}</a>`;
+        else
+            return `<span class="team-name">${this.name}</span>`
+    }
+
+    getNameWithRank(date, region, teamDetailLink = false) {
+        let result = this.getNameDisplay(teamDetailLink);
         let teamRanking = this.getRanking(date);
         if (teamRanking != null && teamRanking.rank) {
             let rankType;
@@ -104,6 +120,10 @@ class MrdaTeam {
             return null;
     }
 
+    getRankingPointsDisplay(date) {
+        return `<div class="team-rp">${this.getRankingPoints(date) ?? '&nbsp;'}</div>`;
+    }
+
     getPredictorRankingPoints(date) {
         let seedDate = getSeedDate(date, true);
         let ranking = this.getRanking(date, false, seedDate);
@@ -120,6 +140,10 @@ class MrdaTeam {
             return ranking.rankingPoints;
         }
         return null;
+    }
+
+    getPredictorRankingPointsDisplay(date) {
+        return `<div class="team-rp">${this.getPredictorRankingPoints(date) ?? '&nbsp;'}</div>`;
     }
 
     getPredictorPointsWithError(date) {
