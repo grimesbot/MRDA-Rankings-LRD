@@ -47,13 +47,11 @@ nav .form-floating>label {
 }
 
 /* Chart heights */
-#rankings-chart-container {
-    height: 30rem;
-}
+#rankings-chart-container,
 #team-chart-container,
 #team-chart-container .tab-pane,
 #predictor-chart-container {
-    height: 25rem;
+    height: 20rem;
 }
 
 /* Postseason Position Background Colors */

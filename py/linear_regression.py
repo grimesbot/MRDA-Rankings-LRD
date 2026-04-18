@@ -118,8 +118,17 @@ def linear_regression(games, seeding_team_rankings=None):
 
     return result
 
-def rank_teams(team_rankings, games, compliance_games):
-    result = {}
+def rank_teams(team_rankings, games, calc_date):
+    global q1_cutoff
+
+    # Filter compliance games to exclude postseason events prior to Q1 cutoff date
+    compliance_games = games
+    # No need to filter if we're doing the q1 calculation, but increment q1_cutoff to next year for future calculations
+    if calc_date.month == 3 and calc_date.day <= 7:
+        q1_cutoff = calc_date
+    else:
+        for postseasonEventName in POSTSEASON_EVENT_NAMES:
+            compliance_games = [game for game in compliance_games if game.event_id is None or mrda_events[game.event_id].name is None or postseasonEventName not in mrda_events[game.event_id].name or game.datetime.date() >= q1_cutoff]
 
     team_ids = []
     for game in games:
@@ -137,7 +146,7 @@ def rank_teams(team_rankings, games, compliance_games):
             team_ranking = team_rankings[team_id]
             team_ranking.reset_accumulators()
 
-        for game in [game for game in games if game.home_team == team_id or game.away_team == team_id]:
+        for game in [game for game in games if game.scores_submitted and (game.home_team == team_id or game.away_team == team_id)]:
             if not game.forfeit:
                 team_score = game.home_score if game.home_team == team_id else game.away_score
                 opponent_score = game.away_score if game.home_team == team_id else game.home_score
@@ -161,7 +170,7 @@ def rank_teams(team_rankings, games, compliance_games):
 
     # Rank teams globally
     rank = 1
-    for team_ranking in sorted([tr for tr in team_rankings.values() if tr.active_status], key=lambda tr: tr.ranking_points, reverse=True):
+    for team_ranking in sorted([tr for tr in team_rankings.values() if tr.active_status], key=lambda tr: tr.ranking_points  if tr.ranking_points is not None else (rp_min - 1), reverse=True):
         team_ranking.rank = rank
         rank += 1
 
@@ -205,7 +214,6 @@ def get_ranking_history(calc_date):
     return rankings_history[ranking_history_dt] if ranking_history_dt is not None else None
 
 def get_rankings(calc_date):
-    global q1_cutoff
 
     team_rankings = None
 
@@ -219,25 +227,18 @@ def get_rankings(calc_date):
     # would include Apr '23-Aug'24 data which is 16 months, more than the typical 12 months.
     # But if we only use 12 months of data, Apr-Aug '23 games would fall off entirely & not contribute to
     # future seeding rankings depending on the time of the year the rankings are calculated.
+    # Include future games without scores (with a 3 day grace period) for compliance calculations for 
+    # projecting active status and postseason eligibility.    
     if seeding_team_rankings is None:
-        games = [game for game in mrda_games if game.scores_submitted and game.datetime.date() < calc_date ]
+        games = [game for game in mrda_games if game.datetime.date() < calc_date and (game.scores_submitted or (date.today() - relativedelta(days=3)) <= game.datetime.date()) ]
     else:
-        games = [game for game in mrda_games if game.scores_submitted and seed_date <= game.datetime.date() < calc_date ]
-
-    # Filter compliance games to exclude postseason events prior to Q1 cutoff date
-    compliance_games = games
-    # No need to filter if we're doing the q1 calculation, but increment q1_cutoff to next year for future calculations
-    if calc_date.month == 3 and calc_date.day <= 7:
-        q1_cutoff = calc_date
-    else:
-        for postseasonEventName in POSTSEASON_EVENT_NAMES:
-            compliance_games = [game for game in compliance_games if game.event_id is None or mrda_events[game.event_id].name is None or postseasonEventName not in mrda_events[game.event_id].name or game.datetime.date() >= q1_cutoff]
+        games = [game for game in mrda_games if seed_date <= game.datetime.date() < calc_date and (game.scores_submitted or (date.today() - relativedelta(days=3)) <= game.datetime.date()) ]
 
     # Filter forfeits from calc_games
-    calc_games = [game for game in games if not game.forfeit]
+    calc_games = [game for game in games if game.scores_submitted and not game.forfeit]
 
     team_rankings = linear_regression(calc_games, seeding_team_rankings)
-    rank_teams(team_rankings, games, compliance_games)
+    rank_teams(team_rankings, games, calc_date)
 
     if (seeding_team_rankings is not None):
         next_seed_date = get_seed_date(calc_date + timedelta(weeks=1))
