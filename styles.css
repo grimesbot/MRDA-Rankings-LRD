@@ -185,7 +185,8 @@ tr:has(.opponent a .team-logo:hover) .opponent a.team-name {
 }
 
 
-.annotations {
+.annotations,
+#upcoming-games-table .game-time {
     font-size: .85em;
 }
 

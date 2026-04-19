@@ -275,7 +275,7 @@ const setupRankingsTable = teams => {
                 }
             },
             { data: 'rankingPoints', width: '1em', className: 'px-1' },
-            { data: 'standardError', width: '1em', className: 'px-1 dt-left', render: (data, type, team) => { return type === 'display' ? `±${data}` : data; }},
+            { data: 'standardError', width: '1em', className: 'px-1 dt-left', render: (data, type, team) => { return type === 'display' && data != null ? `±${data}` : data; }},
             { data: 'activeStatusGameCount', width: '1em', className: 'px-1', render: (data, type, team) => { return type === 'display' && !team.postseasonEligible ? `${data}<span class="postseason-ineligible">*</span>` : data; } },
             { data: 'wins', width: '1em', orderable: false, className: 'px-1 dt-center'},
             { data: 'losses', width: '1.6em', orderable: false, className: 'px-1 dt-left'},

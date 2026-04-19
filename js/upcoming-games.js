@@ -5,7 +5,7 @@ $(() => {
     new DataTable('#upcoming-games-table', {
         columns: [
             { data: 'event.startDt', visible: false },
-            { data: 'date', visible: false },
+            { data: 'date', className: 'no-wrap game-time', width: '1em', render: (data, type, game) => { return type === 'display' ? data.toLocaleTimeString(undefined,{timeStyle:'short'}) : data; } },
             { name: 'homeName', width: '30em', className: 'dt-right', render: (data, type, game) => { return `${game.homeTeam.getNameDisplay()}${game.homeTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
             { name: 'homeLogo', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(false, 'ms-2'); } },
             { data: 'getPredictedDifferentialDisplay()', width: '1em', className: 'dt-center' },

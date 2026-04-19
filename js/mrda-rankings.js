@@ -194,7 +194,7 @@ class MrdaRankings {
 
     getOrderedTeams(region) {
         return Object.values(this.mrdaTeams)
-            .filter(team => (team.wins + team.losses) > 0 && (team.region == region || region == 'GUR'))
+            .filter(team => (team.rankingPoints != null || team.activeStatusGameCount > 0) && (team.region == region || region == 'GUR'))
             .sort((a, b) => a.rankSort - b.rankSort);
     }
 }
