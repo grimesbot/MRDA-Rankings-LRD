@@ -31,8 +31,8 @@ team_info = {
     "17912a": { "region": "AM", "name": "Tampa Death Rollers", "location":"Tampa, Florida – USA" }, # Tampa Roller Derby (A)
     "17914a": { "region": "AM", "name": "Dallas Y'allhalla", "location":"The Colony, Texas – USA" }, # Dallas Derby Devils (A)
     "17914b": { "region": "AM", "name": "Dallas Brawl'Halla", "location":"The Colony, Texas – USA" }, # Dallas Derby Devils (B)    
-    "17918a": { "region": "AM", "name": "15 Ronins", "location":"Buenos Aires – ARG" }, # 15 Ronins Roller Derby (A)
-    "17920a": { "region": "AM", "name": "Gatos Monteses", "location":"Buenos Aires – ARG" }, # Gatos Monteses (A)
+    "17918a": { "region": "AM", "name": "15 Ronins", "location":"Buenos Aires – ARG", "distance_clause_applies": True }, # 15 Ronins Roller Derby (A)
+    "17920a": { "region": "AM", "name": "Gatos Monteses", "location":"Buenos Aires – ARG", "distance_clause_applies": True }, # Gatos Monteses (A)
     "17922a": { "region": "AM", "name": "Brookings Area Roller Derby", "location":"Brookings, South Dakota - USA" }, # Brookings Area Roller Derby
 
     "2692a": { "region": "EUR", "name": "Crash Test Brummies", "location":"Halesowen, Birmingham – UK" }, # Crash Test Brummies (A)
