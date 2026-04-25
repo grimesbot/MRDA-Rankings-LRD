@@ -1,0 +1,21 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Web App",
+            "request": "launch",
+            "type": "chrome",
+            "url": "${workspaceFolder}/index.html"
+        },
+        {
+            "name": "Python (Update Rankings)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/py/linear_regression.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}

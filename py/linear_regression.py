@@ -192,10 +192,12 @@ def rank_teams(team_rankings, games, calc_date):
             team_ranking.region_rank = region_rank
             region_rank += 1
 
+# Can be removed after 2026 season.
 adhoc_postseason_cutoff = date(2026,7,31) # Special "Regular Season" end date for 2026 postseason by vote
 adhoc_postseason_start = date(2026,6,3) # Q2-2026 ranking deadline we're extending
 
 def get_seed_date(calc_date):
+    # Can be removed after 2026 season.
     if calc_date.today().year == adhoc_postseason_cutoff.year and adhoc_postseason_start < calc_date < adhoc_postseason_cutoff:
         return get_seed_date(adhoc_postseason_start)
 
@@ -271,6 +273,10 @@ if not (next_ranking_deadline.month % 3 == 0 and next_ranking_deadline.day <= 7 
 next_ranking_deadline = next_ranking_deadline.replace(day=1)
 # Set to Wednesday = 2
 next_ranking_deadline = next_ranking_deadline + timedelta(days=(2 - next_ranking_deadline.weekday() + 7) % 7)
+
+# Can be removed after 7/31/2026.
+if next_ranking_deadline == adhoc_postseason_start:
+    next_ranking_deadline = adhoc_postseason_cutoff
 
 print("Beginning ranking calculation...")
 start_time = time.perf_counter()

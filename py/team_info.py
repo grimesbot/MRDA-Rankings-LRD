@@ -5,7 +5,7 @@ team_info = {
     "2686a": { "region": "AM", "name": "Casco Bay Not So Jolly Rogers", "location":"Westbrook, Maine – USA" }, # Casco Bay Roller Derby (A)
     "2686b": { "region": "AM", "name": "Casco Bay Black Sails", "location":"Westbrook, Maine – USA" }, # Casco Bay Roller Derby (B)
     "2687a": { "region": "AM", "name": "Chicago Bruise Brothers", "location":"Chicago, Illinois – USA" }, # Chicago Bruise Brothers (A)
-    "2687b": { "region": "AM", "name": "Chicago Step Brothers", "location":"Chicago, Illinois – USA" }, # Chicago Bruise Brothers (B)
+    "2687b": { "region": "AM", "name": "Chicago Step Bros", "location":"Chicago, Illinois – USA" }, # Chicago Bruise Brothers (B)
     "2689a": { "region": "AM", "name": "Cleveland Guardians", "location":"Cleveland Heights, Ohio – USA" }, # Cleveland Guardians Roller Derby (A)
     "2693a": { "region": "AM", "name": "Denver Ground Control", "location":"Denver, Colorado – USA" }, # Denver Ground Control (A)
     "2694a": { "region": "AM", "name": "Detroit Riot", "location":"Detroit, Michigan – USA", "logo": "img/detroit-riot.jpg" }, # Detroit Mens Roller Derby (A)

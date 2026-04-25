@@ -2,15 +2,15 @@
 $(() => {
     let gamesWithoutScores = mrdaRankings.mrdaGames.filter(game => !(game.homeTeamId in game.scores) || !(game.awayTeamId in game.scores));
 
-    new DataTable('#upcoming-games-table', {
+    let upcomingGamesTable = new DataTable('#upcoming-games-table', {
         columns: [
             { data: 'event.startDt', visible: false },
             { data: 'date', className: 'no-wrap game-time', width: '1em', render: (data, type, game) => { return type === 'display' ? data.toLocaleTimeString(undefined,{timeStyle:'short'}) : data; } },
-            { name: 'homeName', width: '30em', className: 'dt-right', render: (data, type, game) => { return `${game.homeTeam.getNameDisplay()}${game.homeTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
+            { name: 'homeName', width: '30em', className: 'dt-right', render: (data, type, game) => { return `${game.homeTeam.getNameWithRank(game.date, region)}${game.homeTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
             { name: 'homeLogo', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(false, 'ms-2'); } },
             { data: 'getPredictedDifferentialDisplay()', width: '1em', className: 'dt-center' },
             { name: 'awayLogo', width: '1em', render: (data, type, game) => { return game.awayTeam.getLogoDisplay(false, 'ms-2'); } },                
-            { name: 'awayName', width: '30em', render: (data, type, game) => { return `${game.awayTeam.getNameDisplay()}${game.awayTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
+            { name: 'awayName', width: '30em', render: (data, type, game) => { return `${game.awayTeam.getNameWithRank(game.date, region)}${game.awayTeam.getPredictorRankingPointsDisplay(game.date)}`; } },
         ],
         data: gamesWithoutScores,
         rowGroup: {
@@ -26,6 +26,13 @@ $(() => {
             $row = $(row);
             $row.attr('data-bs-toggle', 'modal');
             $row.attr('data-bs-target', '#predictor-modal');
-        },
+        }
+    }).on('draw', () => {
+        $('#upcoming-games-table [data-toggle="tooltip"]').tooltip();
+    });
+
+    $('#region').on('change', () => {
+        // Re-read upcoming games table with regional ranks
+        upcomingGamesTable.rows().invalidate('data').draw();
     });
 });

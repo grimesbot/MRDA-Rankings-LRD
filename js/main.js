@@ -35,12 +35,25 @@ const setupRankingDates = $dateSelect => {
         searchDt.setDate(1 + ((3 - searchDt.getDay() + 7) % 7)); // Set to Wednesday = 3
     }
 
+    // Add option for ad hoc postseason dates. Can be removed after 2026 season.
+    if (new Date().getFullYear() == ADHOC_POSTSEASON_START.getFullYear() && ADHOC_POSTSEASON_START <= newestRankingDt) {
+        let wednesdayBeforeAdhoc = new Date(ADHOC_POSTSEASON_CUTOFF);
+        wednesdayBeforeAdhoc.setHours(0, 0, 0, 0);
+        wednesdayBeforeAdhoc.setDate(wednesdayBeforeAdhoc.getDate() + ((3 - wednesdayBeforeAdhoc.getDay() + 7) % 7));
+        dateOptions.push({
+                date: wednesdayBeforeAdhoc,
+                value: `${wednesdayBeforeAdhoc.getFullYear()}-${wednesdayBeforeAdhoc.getMonth() + 1}-${wednesdayBeforeAdhoc.getDate()}`,
+                text: ADHOC_POSTSEASON_CUTOFF.toLocaleDateString(undefined, {year:'2-digit',month:'numeric',day:'numeric'}),
+                selected: false
+            });
+    }
+
     let queryDt = null;
     if (urlParams.has('date')) {
         queryDt = new Date(urlParams.get('date'));
         if (isNaN(queryDt))
             queryDt = null;
-        else {
+        else if (allRankingDts[0] <= queryDt && queryDt <= newestRankingDt) {
             queryDt.setHours(0, 0, 0, 0);
             queryDt.setDate(queryDt.getDate() + ((3 - queryDt.getDay() + 7) % 7)); // Set most recent Wednesday = 3
         }
@@ -389,5 +402,7 @@ $(() => {
         
     $('#rankings-generated-dt').text(new Date(mrda_config.rankings_generated_utc).toLocaleString(undefined, {dateStyle: 'short', timeStyle: 'long'}));
 
-    $('[data-toggle="tooltip"]').tooltip();
+    $(() => { // Setup tooltips after all other elements are rendered.
+        $('[data-toggle="tooltip"]').tooltip();
+    });
 });

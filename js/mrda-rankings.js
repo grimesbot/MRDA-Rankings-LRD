@@ -1,5 +1,6 @@
 const REGIONS = ['EUR', 'AA', 'AM'];
 
+// Can be removed after 2026 season.
 const ADHOC_POSTSEASON_CUTOFF = new Date(2026,7-1,31); // Special "Regular Season" end date for 2026 postseason by vote
 const ADHOC_POSTSEASON_START = new Date(2026,6-1,3); // Q2-2026 ranking deadline we're extending
 
@@ -9,6 +10,7 @@ const getSeedDate = (date, addWeek = false) => {
         date.setDate(date.getDate() + 7);
     }
 
+    // Can be removed after 2026 season.
     if (new Date().getFullYear() == ADHOC_POSTSEASON_CUTOFF.getFullYear() && ADHOC_POSTSEASON_START < date && date < ADHOC_POSTSEASON_CUTOFF)
         return getSeedDate(ADHOC_POSTSEASON_START)
 
