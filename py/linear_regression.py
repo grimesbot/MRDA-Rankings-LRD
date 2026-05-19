@@ -257,7 +257,7 @@ def get_rankings(calc_date):
     if not github_actions_run and calc_date.month in [3,6,9,12] and calc_date.day <= 7:
         print_result = team_rankings if team_rankings is not None else get_ranking_history(calc_date)
         print("Rankings for " + calc_date.strftime("%Y-%m-%d"))
-        for item in sorted(print_result.items(), key=lambda item: (item[1].rank if item[1].rank is not None else len(print_result), -item[1].ranking_points if item[1].ranking_points is not None else 0)):
+        for item in sorted(print_result.items(), key=lambda item: (item[1].rank if item[1].rank is not None else len(print_result), -item[1].ranking_points if item[1].ranking_points is not None else -(rp_min - 1))):
             tr = item[1]
             print(f"{tr.rank if tr.rank is not None else "NR"}\t{str(round(tr.ranking_points - rp_min, 2)) if tr.ranking_points is not None else "No RP"}\t{tr.mrda_team.name}")
         print("")
