@@ -139,20 +139,6 @@ for api_game in sorted_game_data:
     if not mrda_game.scores_submitted and mrda_game.datetime < (datetime.today() - timedelta(days=45)):
         continue
 
-    # Correct error at Clover Cup 2026, Atlanta Terminus was entered as secondary charter instead of primary
-    if mrda_game.event_id == 105 and mrda_game.away_team == "3013b":
-        mrda_game.away_team = "3013a"
-
-    # Swap DotD 2026 scores that were entered incorrectly: Pittsburgh vs Casco Bay and Philly vs. Race City
-    if (mrda_game.event_id == 119 and
-        ((mrda_game.home_team == "17403a" and mrda_game.away_team == "2686a" and mrda_game.home_score == 88 and mrda_game.away_score == 173) or
-        (mrda_game.home_team == "2715a" and mrda_game.away_team == "2719a" and mrda_game.home_score == 189 and mrda_game.away_score == 236))
-    ):
-            home_score = mrda_game.away_score
-            away_score = mrda_game.home_score
-            mrda_game.home_score = home_score
-            mrda_game.away_score = away_score
-
     # Event
     if mrda_game.event_id is not None:
         if mrda_game.event_id not in mrda_events:
