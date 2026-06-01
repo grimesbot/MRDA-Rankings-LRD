@@ -130,7 +130,7 @@ for api_game in sorted_game_data:
         continue
 
     # Hardcode score for Brainstorm vs. Red Flags on 5/31 until it's submitted.
-    if api_event.sanctioning_events_id == 372 and api_event.scores_submitted == False:
+    if api_event.sanctioning_events_id == 372 and api_event.scores_submitted != 1:
         api_event.home_league_score = 269
         api_event.away_league_score = 190
         api_event.scores_submitted = True    
