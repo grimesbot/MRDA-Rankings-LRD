@@ -129,6 +129,12 @@ for api_game in sorted_game_data:
         print(f"away_league_charter not primary or secondary, sanctioning_events_id: {api_event.sanctioning_events_id}")
         continue
 
+    # Hardcode score for Brainstorm vs. Red Flags on 5/31 until it's submitted.
+    if api_event.sanctioning_events_id == 372 and api_event.scores_submitted == False:
+        api_event.home_league_score = 269
+        api_event.away_league_score = 190
+        api_event.scores_submitted = True    
+
     mrda_game = MrdaGame(api_event)
 
     if mrda_game.forfeit and mrda_game.forfeit_team is None:
