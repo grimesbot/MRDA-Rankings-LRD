@@ -9,28 +9,19 @@ $(() => {
             { name: 'homeName', className: 'dt-right home', 
                 render: (data, type, game) => { 
                     let result = game.homeTeam.getNameWithRank(game.date, region, true);
-                    if (game.forfeit && game.forfeitTeamId == game.homeTeamId)
-                        result += '<sup class="forfeit-info">↓</sup>';
-                    result += game.awayTeamId == VIRTUAL_TEAM_ID ? game.homeTeam.getRankingPointsDisplay(game.date) : game.homeTeam.getPredictorRankingPointsDisplay(game.date);
+                    if (game.awayTeamId == VIRTUAL_TEAM_ID)
+                        result += game.homeTeam.getRankingPointsDisplay(game.date);
+                    else
+                        result += game.homeTeam.getPredictorRankingPointsDisplay(game.date);
                     return result;
                 }
             },
             { name: 'homeLogo', className: 'home', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(true, 'ms-2'); } },
-            { name: 'score', width: '7em', className: 'dt-center no-wrap', 
-                render: (data, type, game) => {
-                    let result = `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}`;
-                    if (game.status < 6)
-                        result += '<sup class="unvalidated-info">†</sup>';
-                    result += game.getPerformanceDeltasDisplay();
-                    return result;
-                } 
-            },
+            { name: 'score', width: '7em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getScoreColumn(type); } },
             { name: 'awayLogo', className: 'away', width: '1em', render: (data, type, game) => { return game.awayTeam.getLogoDisplay(true, 'ms-2');} },
             { name: 'awayName', className: 'away', 
                 render: (data, type, game) => {
                     let result = game.awayTeam.getNameWithRank(game.date, region, true);
-                    if (game.forfeit && game.forfeitTeamId == game.awayTeamId)
-                        result += '<sup class="forfeit-info">↓</sup>';
                     result += game.awayTeam.getPredictorRankingPointsDisplay(game.date);
                     return result; 
                 }
@@ -53,8 +44,7 @@ $(() => {
             bottomStart: 'search'
         },        
         drawCallback: settings => {
-            $('#results-table .unvalidated-info').tooltip({title: 'Score not yet validated'});            
-            $('#results-table .forfeit-info').tooltip({title: 'Forfeit'});
+            $('#results-table .unvalidated-info').tooltip({title: 'Score not yet validated'});
             $('#results-table [data-toggle="tooltip"]').tooltip();            
         }
     });

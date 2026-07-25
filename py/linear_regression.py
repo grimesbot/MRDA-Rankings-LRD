@@ -160,7 +160,7 @@ def rank_teams(team_rankings, games, calc_date):
         # Active status and postseason eligibility only use compliance games
         unique_opponents = []
         for game in [game for game in compliance_games if game.home_team == team_id or game.away_team == team_id]:
-            if not game.forfeit or game.forfeit_team != team_id:
+            if not game.forfeit or game.forfeit_team != team_id or game.status == 9: # 9 = Unplayable - Game Credit Awarded
                 team_ranking.game_count += 1
                 opponent = game.away_team if game.home_team == team_id else game.home_team
                 if not opponent in unique_opponents:
@@ -174,21 +174,45 @@ def rank_teams(team_rankings, games, calc_date):
         team_ranking.rank = rank
         rank += 1
 
-    # Apply forfeit penalties
+    # Rank teams regionally
+    for region in set([t.region for t in mrda_teams.values()]):
+        region_rank = 1
+        for team_ranking in sorted([tr for tr in team_rankings.values() if region == tr.mrda_team.region and tr.rank is not None], key=lambda tr: tr.rank):
+            team_ranking.region_rank = region_rank
+            region_rank += 1
+
+    # Apply forfeit penalties globally
     for team_ranking in sorted([tr for tr in team_rankings.values() if tr.rank is not None and tr.forfeits > 0 ], key=lambda tr: tr.rank, reverse=True):
         # Two spots for teach forfeit
         for forfeit in range(team_ranking.forfeits):
             for spot in range(2):
                 swap_team_ids = [team_id for team_id, tr in team_rankings.items() if tr.rank == team_ranking.rank + 1]
+                team_ranking.rank += 1
                 if len(swap_team_ids) > 0:
                     swap_team_id = swap_team_ids[0]
                     team_rankings[swap_team_id].rank -= 1
-                    team_ranking.rank += 1
 
-    # Rank teams regionally
+    # Re-rank globally after forfeit penalties, teams can go below minimum rank if they have forfeits, this will remove ranks in gaps.
+    rank = 1
+    for team_ranking in sorted([tr for tr in team_rankings.values() if tr.rank is not None], key=lambda tr: tr.rank):
+        team_ranking.rank = rank
+        rank += 1
+
+    # Apply forfeit penalties regionally
     for region in set([t.region for t in mrda_teams.values()]):
+        for team_ranking in sorted([tr for tr in team_rankings.values() if region == tr.mrda_team.region and tr.region_rank is not None and tr.forfeits > 0 ], key=lambda tr: tr.region_rank, reverse=True):
+                # Two spots for teach forfeit
+                for forfeit in range(team_ranking.forfeits):
+                    for spot in range(2):
+                        swap_team_ids = [team_id for team_id, tr in team_rankings.items() if region == tr.mrda_team.region and tr.region_rank == team_ranking.region_rank + 1]
+                        team_ranking.region_rank += 1
+                        if len(swap_team_ids) > 0:
+                            swap_team_id = swap_team_ids[0]
+                            team_rankings[swap_team_id].region_rank -= 1
+
+        # Re-rank regionally after forfeit penalties, teams can go below minimum rank if they have forfeits, this will remove ranks in gaps.
         region_rank = 1
-        for team_ranking in sorted([tr for tr in team_rankings.values() if region == tr.mrda_team.region and tr.rank is not None], key=lambda tr: tr.rank):
+        for team_ranking in sorted([tr for tr in team_rankings.values() if region == tr.mrda_team.region and tr.region_rank is not None], key=lambda tr: tr.region_rank):
             team_ranking.region_rank = region_rank
             region_rank += 1
 
@@ -236,8 +260,8 @@ def get_rankings(calc_date):
     else:
         games = [game for game in mrda_games if seed_date <= game.datetime.date() < calc_date and (game.scores_submitted or (date.today() - relativedelta(days=3)) <= game.datetime.date()) ]
 
-    # Filter forfeits from calc_games
-    calc_games = [game for game in games if game.scores_submitted and not game.forfeit]
+    # Filter forfeits and 'Unplayable - Game Credit Awarded' from calc_games
+    calc_games = [game for game in games if game.scores_submitted and not game.forfeit and game.status != 9]
 
     team_rankings = linear_regression(calc_games, seeding_team_rankings)
     rank_teams(team_rankings, games, calc_date)

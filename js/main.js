@@ -39,7 +39,7 @@ const setupRankingDates = $dateSelect => {
     if (new Date().getFullYear() == ADHOC_POSTSEASON_START.getFullYear() && ADHOC_POSTSEASON_START <= newestRankingDt) {
         let wednesdayBeforeAdhoc = new Date(ADHOC_POSTSEASON_CUTOFF);
         wednesdayBeforeAdhoc.setHours(0, 0, 0, 0);
-        wednesdayBeforeAdhoc.setDate(wednesdayBeforeAdhoc.getDate() + ((3 - wednesdayBeforeAdhoc.getDay() + 7) % 7));
+        wednesdayBeforeAdhoc.setDate(wednesdayBeforeAdhoc.getDate() + ((3 - wednesdayBeforeAdhoc.getDay() - 7) % 7));
         dateOptions.push({
                 date: wednesdayBeforeAdhoc,
                 value: `${wednesdayBeforeAdhoc.getFullYear()}-${wednesdayBeforeAdhoc.getMonth() + 1}-${wednesdayBeforeAdhoc.getDate()}`,
@@ -196,7 +196,7 @@ const setupRankingChart = teams => {
     
     $('#rankings-table').on('click', 'th i.bi-graph-up', e => {
         let dt = $('#rankings-table').DataTable();
-        let teams = dt.rows().data().toArray().sort((a, b) => a.rankSort - b.rankSort);
+        let teams = dt.rows().data().toArray().sort((a, b) => region == 'GUR' ? a.rankSort - b.rankSort : a.regionRankSort - b.regionRankSort);
         let charted = teams.filter(team => team.chart);
         let topFive = teams.slice(0, 5);
 
@@ -245,7 +245,7 @@ const setupRankingsTable = teams => {
                     if (type === 'export' && data == null)
                         return 'NR';
                     if (type === 'sort')
-                        return team.rankSort;
+                        return region == 'GUR' ? team.rankSort : team.regionRankSort;
                     else if (region != 'GUR')
                         return team.regionRank;
                     else

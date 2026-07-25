@@ -39,6 +39,7 @@ class MrdaTeam {
         this.rank = null;
         this.regionRank = null;        
         this.rankSort = null;
+        this.regionRankSort = null;
         this.delta = null;
         this.regionDelta = null;        
         this.postseasonPosition = null;

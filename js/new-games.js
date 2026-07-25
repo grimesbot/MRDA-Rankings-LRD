@@ -19,32 +19,19 @@ $(() => {
                     if (type === 'sort')
                         return data;
                     let result = type === 'display' ? game.homeTeam.getNameWithRank(game.date, region, true) : data;
-                    if (game.forfeit && game.forfeitTeamId == game.homeTeamId)
-                        result += type === 'display' ? '<sup class="forfeit-info">↓</sup>' : ' ↓';
                     if (type === 'display')
                         result += game.homeTeam.getPredictorRankingPointsDisplay(game.date);
                     return result;
                 }
             },
             { name: 'homeLogo', className: 'home', width: '1em', render: (data, type, game) => { return game.homeTeam.getLogoDisplay(true, 'ms-2'); } },
-            { name: 'score', width: '7em', className: 'dt-center no-wrap',
-                render: (data, type, game) => {
-                    if (type === 'sort')
-                        return Math.abs(game.scores[game.homeTeamId] - game.scores[game.awayTeamId]);
-                    let result = `${game.scores[game.homeTeamId]} - ${game.scores[game.awayTeamId]}`;
-                    if (type === 'display')
-                        result += game.getPerformanceDeltasDisplay();
-                    return result;
-                }
-            },
+            { name: 'score', width: '7em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getScoreColumn(type); } },
             { name: 'awayLogo', className: 'away', width: '1em', render: (data, type, game) => { return game.awayTeam.getLogoDisplay(true, 'ms-2');} },
             { data: 'awayTeam.name', className: 'away', 
                 render: (data, type, game) => {
                     if (type === 'sort')
                         return data;
                     let result = type === 'display' ? game.awayTeam.getNameWithRank(game.date, region, true) : data;
-                    if (game.forfeit && game.forfeitTeamId == game.awayTeamId)
-                        result += type === 'display' ? '<sup class="forfeit-info">↓</sup>' : ' ↓';
                     if (type === 'display')
                         result += game.awayTeam.getPredictorRankingPointsDisplay(game.date);                    
                     return result;
@@ -68,7 +55,6 @@ $(() => {
                         extend: 'copy',
                         text: '<i class="bi bi-copy"></i>',
                         exportOptions: exportOptions,
-                        messageBottom: '↓ Forfeit',
                         title: null,
                     }, 
                     {
@@ -80,7 +66,6 @@ $(() => {
             }
         },
         drawCallback: settings => {
-            $('#new-games-table .forfeit-info').tooltip({title: 'Forfeit'});
             $('#new-games-table [data-toggle="tooltip"]').tooltip();
         }
     });

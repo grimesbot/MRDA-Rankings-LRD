@@ -52,7 +52,18 @@ class MrdaGame {
     }
 
     getWL(teamId) {
-        return this.scores[teamId] > this.scores[this.getOpponentTeamId(teamId)] ? 'W' : 'L';
+        if (this.status == 9)
+            return '<span data-toggle="tooltip" title="Game Credit — Cancelled (unplayable)">G</span>';
+        if (this.forfeit) {
+            if (this.forfeitTeamId == teamId)
+                return `<span data-toggle="tooltip" title="Forfeit — No game credit earned">F</span>`;
+            else
+                return `<span data-toggle="tooltip" title="Game Credit — Forfeit by opponent">G</span>`;
+        }
+        if (this.scores[teamId] > this.scores[this.getOpponentTeamId(teamId)])
+            return '<span data-toggle="tooltip" title="Win">W</span>';
+        else
+            return '<span data-toggle="tooltip" title="Loss">L</span>';
     }
 
     getAtVs(teamId) {
@@ -63,7 +74,7 @@ class MrdaGame {
         if (team.teamId in this.actualDifferentials)
             return this.actualDifferentials[team.teamId];
 
-        if (!(this.homeTeamId in this.scores) || !(this.awayTeamId in this.scores) || this.forfeit)
+        if (!(this.homeTeamId in this.scores) || !(this.awayTeamId in this.scores) || this.forfeit || this.status == 9)
             this.actualDifferentials[team.teamId] = null;
         else
             this.actualDifferentials[team.teamId] = this.scores[team.teamId] - this.scores[this.getOpponentTeamId(team.teamId)];
@@ -202,12 +213,39 @@ class MrdaGame {
         return `<div class="performance-deltas">${this.getPerformanceDeltaWithIcon(this.homeTeam,1)}&nbsp;&nbsp;${this.getPerformanceDeltaWithIcon(this.awayTeam,1)}</div>`;
     }    
 
-    getTeamsScore(teamId) {
-        return `${this.scores[teamId]}-${this.scores[this.getOpponentTeamId(teamId)]}`;
+    getTeamsScore(team) {
+        if (this.status == 9)
+            return '<span data-toggle="tooltip" title="Unplayable — Game credit awarded to both teams">Canceled</span>';
+        if (this.forfeit) {
+            if (this.forfeitTeamId == team.teamId)
+                return `<span data-toggle="tooltip" title="Forfeit by ${team.name} — No game credit earned">Forfeit</span>`;
+            else
+                return `<span data-toggle="tooltip" title="Forfeit by ${this.getOpponentTeam(team.teamId).name} — Game credit awarded to ${team.name}">Forfeit</span>`;
+        }
+
+        return `${this.scores[team.teamId]}-${this.scores[this.getOpponentTeamId(team.teamId)]}`;
     }
 
-    getGameSummary(teamId) {
-        return `${this.getTeamsScore(teamId)} ${this.getWL(teamId)} ${this.getAtVs(teamId)} ${this.getOpponentTeam(teamId).name}`;
+    getScoreColumn(type) {
+        if (type === 'sort')
+            return Math.max(this.scores[this.homeTeamId], this.scores[this.awayTeamId])/Math.max(Math.min(this.scores[this.homeTeamId], this.scores[this.awayTeamId]),1);
+        if (this.status == 9)
+            return '<span data-toggle="tooltip" title="Unplayable — Game credit awarded to both teams">Canceled</span>';
+        if (this.forfeit) {
+            if (this.forfeitTeamId == this.homeTeamId)
+                return `<span data-toggle="tooltip" title="Forfeit by ${this.homeTeam.name} — Game credit awarded to ${this.awayTeam.name}">Home Forfeit</span>`;
+            else
+                return `<span data-toggle="tooltip" title="Forfeit by ${this.awayTeam.name} — Game credit awarded to ${this.homeTeam.name}">Away Forfeit</span>`;
+        }
+            
+        let result = `${this.scores[this.homeTeamId]} - ${this.scores[this.awayTeamId]}`;
+        if (type === 'display')
+            result += this.getPerformanceDeltasDisplay();
+        return result;
+    }
+
+    getGameSummary(team) {
+        return `${this.getTeamsScore(team)} ${this.getWL(team.teamId).replace(/<[^>]*>/g, '')} ${this.getAtVs(team.teamId)} ${this.getOpponentTeam(team.teamId).name}`;
     }
 
     getGameDay() {

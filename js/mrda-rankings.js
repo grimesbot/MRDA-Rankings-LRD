@@ -114,6 +114,7 @@ class MrdaRankings {
             team.rankSort = team.rank;
             if (team.rankSort > maxRank)
                 maxRank = team.rank;
+            team.regionRankSort = team.regionRank;
             team.postseasonPosition = null;
         }
 
@@ -123,6 +124,7 @@ class MrdaRankings {
             .forEach(team => {
                 maxRank += 1;
                 team.rankSort = maxRank;
+                team.regionRankSort = maxRank;
             });
 
         if (date.getFullYear() == ADHOC_POSTSEASON_CUTOFF.getFullYear()) {            
@@ -197,6 +199,6 @@ class MrdaRankings {
     getOrderedTeams(region) {
         return Object.values(this.mrdaTeams)
             .filter(team => (team.rankingPoints != null || team.activeStatusGameCount > 0) && (team.region == region || region == 'GUR'))
-            .sort((a, b) => a.rankSort - b.rankSort);
+            .sort((a, b) => region == 'GUR' ? a.rankSort - b.rankSort : a.regionRankSort - b.regionRankSort);
     }
 }

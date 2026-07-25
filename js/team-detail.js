@@ -78,7 +78,7 @@ const setTeameErrorChart = (team, teamErrorChart) => {
     teamErrorChart.data.datasets = [];
 
     let games = team.gameHistory
-        .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt && !game.forfeit)
+        .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt && !game.forfeit && game.status != 9)
         .sort((a, b) => a.date - b.date);
 
     let seedingRp = team.getRankingPoints(rankingPeriodStartDt);
@@ -159,7 +159,7 @@ $(() => {
                             if (context[0].datasetIndex == 0)
                                 return [
                                     context[0].raw.game.getGameAndEventTitle(),
-                                    context[0].raw.game.getGameSummary(team.teamId)
+                                    context[0].raw.game.getGameSummary(team)
                                 ];                            
                             return context[0].raw.title;                                
                         },
@@ -258,7 +258,7 @@ $(() => {
                                 ];
                             return [
                                 context[0].raw.game.getGameAndEventTitle(),
-                                context[0].raw.game.getGameSummary(team.teamId)
+                                context[0].raw.game.getGameSummary(team)
                             ];
                         },
                         beforeBody: context => {
@@ -294,7 +294,7 @@ $(() => {
             { width: '1em', className: 'dt-center narrow', render: (data, type, game) => { return game.getAtVs(team.teamId) }},
             { width: '1em', className: 'px-1 opponent', render: (data, type, game) => { return game.getOpponentTeam(team.teamId).getLogoDisplay(true); } },
             { className: 'ps-1 opponent text-overflow-ellipsis', render: (data, type, game) => { return game.getOpponentTeam(team.teamId).getNameWithRank(game.date, region, true); } },
-            { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getTeamsScore(team.teamId) }},
+            { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getTeamsScore(team) }},
             { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getActualDifferentialDisplayWithTooltip(team); } },
             { width: '1em', className: 'dt-center no-wrap', render: (data, type, game) => { return game.getPredictedDifferentialWithTooltip(team); } },
             { width: '1em', className: 'dt-center no-wrap', data: 'weight', render: (data, type, game) => { return game.getPerformanceDeltaWithIcon(team); } }
@@ -383,7 +383,7 @@ $(() => {
         $('#team-logo').attr('src', team.logo);
         $('#team-location').text(team.location);
 
-        teamChart.data.datasets[0].data = team.gameHistory.map(game => {
+        teamChart.data.datasets[0].data = team.gameHistory.filter(game => !game.forfeit && game.status != 9).map(game => {
             return { 
                 x: game.date, 
                 y: game.getPerformanceDeltaChart(team),

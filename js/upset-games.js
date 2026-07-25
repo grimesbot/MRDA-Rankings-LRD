@@ -59,7 +59,7 @@ $(() => {
     $('#upsets-modal').on('show.bs.modal', () => {
         let upsetGames = mrdaRankings.mrdaGames
             .filter(game => rankingPeriodStartDt <= game.date && game.date < rankingPeriodDeadlineDt
-                && game.homeTeamId in game.scores && game.awayTeamId in game.scores && !game.forfeit
+                && game.homeTeamId in game.scores && game.awayTeamId in game.scores && !game.forfeit && game.status != 9
                 && game.homeTeam.rank && game.awayTeam.rank
                 && (region == "GUR" || game.homeTeam.region == region && game.awayTeam.region == region)
                 && ((game.scores[game.homeTeamId] > game.scores[game.awayTeamId] && game.homeTeam.rank > game.awayTeam.rank)
